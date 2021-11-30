@@ -3,6 +3,15 @@ Personal Project for learning to scrape data and build model from scratch.
 
 Still a work in progress. 
 
+As of 30/11/2021
+
+Changed formatting from Ipynb file to several py files. 
+
+Still to add prediction file.
+
+Next steps: Improve code in each file. Learn to create branch from VScode and work from there. 
+
+
 As of 02/06/2021
 
 Completed: Scraping and tidying of historical data and next events.
