@@ -8,12 +8,17 @@ from Functions import *
 Notes: 
 22+ pages of events on website. Last page excluded due to errors in data. Might be worth coding in a fix. 
 
+Runtime of this block: for 10 pages - 55 mins(ish), for 21 pages - 1hr 51mins. Can this be reduced? 
+Effectively scraping through 5500+ fights so marginal gains on one fight would help
 
 '''
 
+fight_tag = 'b-fight-details__table-row b-fight-details__table-row__hover js-fight-details-click'
+fighter_tag = 'b-link b-link_style_black'
+
 all_links = [] # List to store all URLs 
 ufc_URL = 'http://ufcstats.com/statistics/events/completed' # Link to UFC stats page with all events 
-sequence = list(range(1,22)) 
+sequence = range(1,22)
                              # Idea: read in the page, find the section with page numbers, save 1 and then the final page text, save each as variable and use those for range. 
 
 for i in sequence: 
@@ -51,7 +56,6 @@ fighter_profile_df = pd.DataFrame(columns =
                                    'blue_Record','blue_Height','blue_Weight','blue_Reach','blue_STANCE','blue_DOB','blue_SLpM',
                                    'blue_Str_Acc','blue_SApM','blue_Str_Def','blue_TD_Avg','blue_TD_Acc','blue_TD_Def','blue_Sub_Avg'])
 
-# Runtime of this block: for 10 pages - 55 mins(ish), for 21 pages - 1hr 51mins
 
 for event in all_links:           # Goes through each event that was saved. 
   ufc_card = parse_webpage(event) # Parses each event. 
@@ -60,19 +64,11 @@ for event in all_links:           # Goes through each event that was saved.
   event_info = ufc_card.find(class_ = 'b-list__box-list').text.replace('\n','').split('      ') # Gets the Date and Location. 
   date = event_info[3]
   location = event_info[-1]
-
-  fight_links = []
-  for tag in ufc_card.find_all():
-    link_to_fight = tag.get('data-link')
-    if link_to_fight != None and 'fight-details' in link_to_fight:
-      fight_links.append(link_to_fight)
+  fight_links = [tag.get('data-link') for tag in ufc_card.find_all('tr',class_ = fight_tag)]
 
   for fights in fight_links: # Goes the statistics page of each fight for each event. 
     red_vs_blue = parse_webpage(fights) 
-    fighter_links = []
-    for link in red_vs_blue.find_all('a',class_ = 'b-link b-link_style_black',limit = 2): # Gets the links to each fighter's profile page and stores them in a list. 
-        fighter_links.append(link.get('href'))
-
+    fighter_links = [link.get('href') for link in red_vs_blue.find_all('a',class_ = fighter_tag, limit = 2)]
 
     weight = red_vs_blue.find(class_ = 'b-fight-details__fight-title').text
     if 'Title' in weight: 
