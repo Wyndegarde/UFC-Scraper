@@ -15,6 +15,10 @@ Effectively scraping through 5500+ fights so marginal gains on one fight would h
 
 fight_tag = 'b-fight-details__table-row b-fight-details__table-row__hover js-fight-details-click'
 fighter_tag = 'b-link b-link_style_black'
+weight_title_tag = 'b-fight-details__fight-title'
+outcome_tag = 'b-fight-details__person'
+winloss_tag = 'b-fight-details__person-status b-fight-details__person-status_style_gray'
+fight_details_tag = 'b-fight-details__table-text'
 
 all_links = [] # List to store all URLs 
 ufc_URL = 'http://ufcstats.com/statistics/events/completed' # Link to UFC stats page with all events 
@@ -34,28 +38,20 @@ for i in sequence:
     
   print(f'Page {i} complete') # Just used as indicator to show page has been processed. 
 
-  # Notes: Gathered the names through scraping, then added red/blue prefixes. 
+# Notes: Gathered the names through scraping, then added red/blue prefixes.
+ 
+fight_column_names =['date','location', 'red_fighter', 'blue_fighter', 'winner', 'weight_class','title_fight',
+'red_knockdowns','blue_knockdowns', 'red_sig_strike', 'blue_sig_strike', 'red_sig_strike_percent', 'blue_sig_strike_percent', 
+'red_total_strikes', 'blue_total_strikes', 'red_takedowns', 'blue_takedowns', 'red_takedown_percent', 'blue_takedown_percent',
+'red_submission_attempts', 'blue_submission_attempts', 'red_reversals', 'blue_reversals', 'red_control_time', 'blue_control_time']
 
-column_names =['date','location',
-               'red_fighter', 'blue_fighter', 'winner', 'weight_class','title_fight',
-               'red_knockdowns','blue_knockdowns',
-               'red_sig_strike', 'blue_sig_strike',
-               'red_sig_strike_percent', 'blue_sig_strike_percent',
-               'red_total_strikes', 'blue_total_strikes',
-               'red_takedowns', 'blue_takedowns',
-               'red_takedown_percent', 'blue_takedown_percent',
-               'red_submission_attempts', 'blue_submission_attempts',
-               'red_reversals', 'blue_reversals',
-               'red_control_time', 'blue_control_time']
+fighter_info_columns = ['red_Record','red_Height','red_Weight','red_Reach','red_STANCE','red_DOB','red_SLpM',
+'red_Str_Acc','red_SApM','red_Str_Def','red_TD_Avg','red_TD_Acc','red_TD_Def','red_Sub_Avg',
+'blue_Record','blue_Height','blue_Weight','blue_Reach','blue_STANCE','blue_DOB','blue_SLpM',
+'blue_Str_Acc','blue_SApM','blue_Str_Def','blue_TD_Avg','blue_TD_Acc','blue_TD_Def','blue_Sub_Avg']
 
-event_stats = pd.DataFrame(columns = column_names)
-
-fighter_profile_df = pd.DataFrame(columns =
-                                  ['red_Record','red_Height','red_Weight','red_Reach','red_STANCE','red_DOB','red_SLpM',
-                                   'red_Str_Acc','red_SApM','red_Str_Def','red_TD_Avg','red_TD_Acc','red_TD_Def','red_Sub_Avg',
-                                   'blue_Record','blue_Height','blue_Weight','blue_Reach','blue_STANCE','blue_DOB','blue_SLpM',
-                                   'blue_Str_Acc','blue_SApM','blue_Str_Def','blue_TD_Avg','blue_TD_Acc','blue_TD_Def','blue_Sub_Avg'])
-
+event_stats = pd.DataFrame(columns = fight_column_names)
+fighter_profile_df = pd.DataFrame(columns = fighter_info_columns)
 
 for event in all_links:           # Goes through each event that was saved. 
   ufc_card = parse_webpage(event) # Parses each event. 
@@ -70,54 +66,46 @@ for event in all_links:           # Goes through each event that was saved.
     red_vs_blue = parse_webpage(fights) 
     fighter_links = [link.get('href') for link in red_vs_blue.find_all('a',class_ = fighter_tag, limit = 2)]
 
-    weight = red_vs_blue.find(class_ = 'b-fight-details__fight-title').text
+    weight = red_vs_blue.find(class_ = weight_title_tag).text
     if 'Title' in weight: 
       title_bout = 'Y'
     else:
       title_bout = 'N'
-    content = strip_ufc_text(weight).replace(' Bout','').replace(' Title','')  
-    # weights.append(content)
-    # for_title.append(title_bout)
-
+    weightclass = strip_ufc_text(weight).replace(' Bout','').replace(' Title','')  
 
     all_info = []
     for link in fighter_links: # We get the links for both fighters in each fight and go through both. 
       profile = parse_webpage(link)
-      record = profile.find(class_ = 'b-content__title-record') # First find their record. 
+      record = profile.find(class_ = 'b-content__title-record')
       all_info.append(strip_ufc_text(record.text).split(':'))   # Strip it down and add it to the list
 
       career_info = profile.find_all(class_="b-list__box-list-item b-list__box-list-item_type_block") # Next we go through all of the summary stats for each fighter. 
       for each in career_info:
-        output = strip_ufc_text(each.text).split(':') # Strip the text containing the info and then split it by colons, to have a list where each entry is a 2 element list containing the name of the stat and the stat itself. 
+        output = strip_ufc_text(each.text).split(':') # Info has "category:value" format. So use split to seperate them
         all_info.append(output) # Add the info for each fighter to the list. This adds all red fighter stats, then loops through again to add blue fighter stats to end of that. 
 
-
-    # Once both fighter statistics from a single fight have been extracted and stored in a list, we need to process that list and add it to the dataframe as one row. 
     all_info.remove(all_info[10]) # This is an empty entry due to website formatting. 
     all_info.remove(all_info[-5]) # see above 
+    all_fighter_stats = [i[1] for i in all_info] 
 
-    information = [i[1] for i in all_info] # This here creates a list containing only the actual statistics (effectively discarding the names)
-    information_series = pd.Series(information,index = fighter_profile_df.columns) # converts this list to a series so it can be added to the dataframe. 
-    fighter_profile_df = fighter_profile_df.append(information_series, ignore_index=True) # Finally add the fighter stats to the dataframe. 
-      
-    outcome = red_vs_blue.find(class_ = 'b-fight-details__person').find(class_ = 'b-fight-details__person-status b-fight-details__person-status_style_gray')
+    afs_series = pd.Series(all_fighter_stats, index = fighter_profile_df.columns) # converts this list to a series so it can be added to the dataframe. 
+    fighter_profile_df = fighter_profile_df.append(afs_series, ignore_index=True) # Finally add the fighter stats to the dataframe. 
+    
+    outcome = red_vs_blue.find(class_ = outcome_tag).find(class_ = winloss_tag)
     if outcome == None:
       win = 'W'
     else: 
       win= strip_ufc_text(outcome.text)
     
-    table = []
-    for link in red_vs_blue.find_all(class_ = 'b-fight-details__table-text', limit = 20): # Goes through the table containing the key information from each fight and stores the stats in a list. 
-        entry = strip_ufc_text(link.get_text())
-        table.append(entry)
+    table = [strip_ufc_text(link.get_text()) for link in red_vs_blue.find_all(class_ = fight_details_tag, limit = 20)] # only first 20 entries relevant
 
     # This code here adds the date, location and winner information to the list and then adds that row to the master dataframe. 
     table.insert(0,date)
     table.insert(1,location)
     table.insert(4,win)
-    table.insert(5,content)
+    table.insert(5,weightclass)
     table.insert(6,title_bout)
-    stats = pd.Series(table, index = column_names)
+    stats = pd.Series(table, index = fight_column_names)
     event_stats = event_stats.append(stats,ignore_index=True)
 
 UFC_DataFrame = pd.concat([event_stats,fighter_profile_df],axis = 1)

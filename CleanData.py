@@ -13,18 +13,14 @@ words = ['\d+',' Tournament','Interim ','UFC ','Australia ','UK ','vs. ','Brazil
 for word in words:
   UFC_DataFrame['weight_class'] = UFC_DataFrame['weight_class'].str.replace(word,'')
 
-drop_columns = []
-for column in UFC_DataFrame.columns:
-  if len(UFC_DataFrame[column][UFC_DataFrame[column] == '---']) > 0:
-    drop_columns.append(column)
-    #print(column, len(UFC_DataFrame[column][UFC_DataFrame[column] == '---']))
-
-height_reach = []
-for column in UFC_DataFrame.columns:
-  if 'Reach' in column or 'Height' in column:
-    height_reach.append(column)
+drop_columns = [column for column in UFC_DataFrame.columns if len(UFC_DataFrame[column][UFC_DataFrame[column] == '---']) > 0]
+height_reach = [column for column in UFC_DataFrame.columns if 'Reach' in column or 'Height' in column]
 
 UFC = UFC_DataFrame.copy()
+UFC = UFC[UFC['blue_DOB'] != '--'] # A few entries are null. Removing for now out of convienience. 
+UFC = UFC[UFC['red_DOB'] != '--']
+UFC = UFC.drop(drop_columns,axis = 1)
+UFC['date'] = UFC['date'].apply(lambda x: datetime.strptime(x,'%B %d, %Y')) 
 
 grouped_df = UFC.copy()
 grouped_df = grouped_df.dropna(subset = height_reach)
@@ -37,12 +33,6 @@ for column in height_reach:
 
 grouping_by_weight_classes = grouped_df.groupby('weight_class').mean()
 reach_height_df = grouping_by_weight_classes[height_reach]
-
-UFC = UFC[UFC['blue_DOB'] != '--']
-UFC = UFC[UFC['red_DOB'] != '--']
-UFC = UFC.drop(drop_columns,axis = 1)
-
-UFC['date'] = UFC['date'].apply(lambda x: datetime.strptime(x,'%B %d, %Y')) 
 
 for column in UFC.columns: 
   if 'DOB' in column:
