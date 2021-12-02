@@ -5,6 +5,8 @@ from Functions import *
 from datetime import datetime
 import statsmodels.formula.api as smf
 from sklearn.preprocessing import LabelEncoder
+import time
+startTime = time.time()
 
 UFC_DataFrame = pd.read_csv('ufc_raw.csv')
 
@@ -22,6 +24,7 @@ UFC = UFC[UFC['red_DOB'] != '--']
 UFC = UFC.drop(drop_columns,axis = 1)
 UFC['date'] = UFC['date'].apply(lambda x: datetime.strptime(x,'%B %d, %Y')) 
 
+# Used for filling in nan values later. 
 grouped_df = UFC.copy()
 grouped_df = grouped_df.dropna(subset = height_reach)
 
@@ -269,3 +272,6 @@ for fighter in fighters:
 UFC_drop_nas = UFC_subset.dropna()
 
 UFC_drop_nas.to_csv('UFC_cleaned.csv',index = False)
+
+executionTime = (time.time() - startTime)
+print('Execution time in seconds: ' + str(executionTime))
