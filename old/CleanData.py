@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from Functions import *
+from functions import *
 
 from datetime import datetime
 import statsmodels.formula.api as smf
