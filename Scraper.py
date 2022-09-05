@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 
 import pandas as pd
-from Functions import *
+from functions import *
 
 '''
 Notes: 
