@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, Union, List
 from abc import ABC, abstractmethod
 
 import requests
@@ -18,6 +18,16 @@ class ScraperABC(ABC):
         text = text.strip().replace('\n','').replace("    ",'')
         return text
     
+    def _apply_rb_prefix(self, text: Union[List[str],str]) -> List[str]:
+        red_prefix = "red_"
+        blue_prefix = "blue_"
+
+        if isinstance(text, list):
+            return [red_prefix + entry if i % 2 == 0 else blue_prefix + entry for i, entry in enumerate(text)]
+        elif isinstance(text, str):
+            return [red_prefix + text, blue_prefix + text]
+
+
     @abstractmethod
     def scrape_url(self):
         pass
