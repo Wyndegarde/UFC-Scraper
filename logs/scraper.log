@@ -1,2 +1,0 @@
-2022-08-26 09:58:45.774 | INFO     | file: newscraper.py -> path: __main__ -> function: <module> -> line: 31 | this is a basic info log
-2022-08-26 09:59:54.957 | INFO     | file: newscraper.py -> path: __main__ -> function: <module> -> line: 18 | hello logs
