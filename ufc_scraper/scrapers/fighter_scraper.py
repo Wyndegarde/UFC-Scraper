@@ -16,3 +16,9 @@ class FighterScraper(ScraperABC):
       for each in career_info:
         output = self._clean_text(each.text).split(':') # Strip the text containing the info and then split it by colons, to have a list where each entry is a 2 element list containing the name of the stat and the stat itself. 
         all_info.append(output) # Add the info for each fighter to the list. This adds all red fighter stats, then loops through again to add blue fighter stats to end of that. 
+      
+      fighter_profile = {entry[0]:entry[1] for entry in all_info if len(entry) ==2} # Create a dictionary where the key is the name of the stat and the value is the stat itself.
+      return fighter_profile
+    
+    def scrape_url(self):
+       super().scrape_url()
