@@ -15,7 +15,7 @@ class CardScraper(ScraperABC):
         super().__init__(url)
         self.ufc_card = self._get_soup()
 
-    def _get_event_details(self):
+    def get_event_details(self):
         event_info = (
             self.ufc_card.find(class_="b-list__box-list")
             .text.replace("\n", "")
@@ -27,7 +27,7 @@ class CardScraper(ScraperABC):
 
         return (date, location)
 
-    def _get_fight_links(self) -> List[str]:
+    def get_fight_links(self) -> List[str]:
         fight_links: List[str] = []
         for tag in self.ufc_card.find_all():
             link_to_fight = tag.get("data-link")

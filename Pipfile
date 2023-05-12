@@ -18,6 +18,7 @@ types-requests = "*"
 matplotlib = "*"
 seaborn = "*"
 types-beautifulsoup4 = "*"
+pandas-stubs = "*"
 
 [dev-packages]
 mypy = "*"

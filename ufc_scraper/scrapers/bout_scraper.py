@@ -96,7 +96,7 @@ class BoutScraper(ScraperABC):
 
         return self._apply_rb_prefix(header)
 
-    def _get_fight_stats(self) -> Dict[str, str]:
+    def get_fight_stats(self) -> Dict[str, str]:
         """
         Extracts the stats for both fighters in the bout.
 
@@ -113,7 +113,7 @@ class BoutScraper(ScraperABC):
         header_and_table: Dict[str, str] = dict(zip(header, table))
         return header_and_table
 
-    def _get_fighter_links(self) -> List[str]:
+    def get_fighter_links(self) -> List[str]:
         fighter_links: List[str] = []
         # Gets the links to each fighter's profile page and stores them in a list.
         for link in self.fight.find_all(

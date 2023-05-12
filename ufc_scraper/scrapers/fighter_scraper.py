@@ -21,7 +21,7 @@ class FighterScraper(ScraperABC):
         super().__init__(url)
         self.fighter = self._get_soup()
 
-    def get_figther_details(self) -> Dict[str, str]:
+    def get_fighter_details(self) -> Dict[str, str]:
         """
         Generates a dictionary containing all of the information for a single fighter.
 
