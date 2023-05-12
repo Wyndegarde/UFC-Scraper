@@ -2,7 +2,7 @@
 Script to store all the configuration variables
 """
 import logging
-from loguru import logger
+from loguru import logger as log
 
 
 class Config:

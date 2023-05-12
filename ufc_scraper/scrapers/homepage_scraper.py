@@ -8,18 +8,18 @@ from ufc_scraper.base_classes import ScraperABC
 
 class HomepageScraper(ScraperABC):
     """
-    Placeholder
+    Class to scrape the homepage. Will get all the links for each event.
     """
 
     def _get_links(self) -> List[str]:
-        '''
+        """
         Method to get all the links from the homepage across all pages
-        '''
+        """
 
         #! Placeholder. Need to dynamically get the number of pages.
         sequence: List[int] = list(range(1, 22))
         links: List[str] = []
-        
+
         # For each page, get the links
         for i in sequence:
             landing_page = self._get_soup(params={"page": i})

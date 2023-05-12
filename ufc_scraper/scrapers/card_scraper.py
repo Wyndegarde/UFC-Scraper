@@ -27,8 +27,8 @@ class CardScraper(ScraperABC):
 
         return (date, location)
 
-    def _get_fight_links(self):
-        fight_links = []
+    def _get_fight_links(self) -> List[str]:
+        fight_links: List[str] = []
         for tag in self.ufc_card.find_all():
             link_to_fight = tag.get("data-link")
             if link_to_fight and "fight-details" in link_to_fight:

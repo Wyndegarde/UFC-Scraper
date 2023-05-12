@@ -1,5 +1,6 @@
 from ufc_scraper.scrapers import HomepageScraper, BoutScraper, FighterScraper
 
+
 def bout_test():
     bout_scraper = BoutScraper("http://www.ufcstats.com/fight-details/2b1ac5d8f98639bf")
 
@@ -14,12 +15,16 @@ def bout_test():
     print(len(header))
     print(len(table))
 
-    combined = dict(zip(header,table))
+    combined = dict(zip(header, table))
     print(combined)
 
+
 def fighter_test():
-    figher_scraper = FighterScraper("http://www.ufcstats.com/fighter-details/efb96bf3e9ada36f")
-    all_info = figher_scraper._get_figther_details()
+    figher_scraper = FighterScraper(
+        "http://www.ufcstats.com/fighter-details/efb96bf3e9ada36f"
+    )
+    all_info = figher_scraper.get_figther_details()
     print(all_info)
+
 
 fighter_test()

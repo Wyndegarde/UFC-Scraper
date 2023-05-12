@@ -17,9 +17,12 @@ lxml = "*"
 types-requests = "*"
 matplotlib = "*"
 seaborn = "*"
+types-beautifulsoup4 = "*"
 
 [dev-packages]
 mypy = "*"
+black = "*"
+pylint = "*"
 
 [requires]
 python_version = "3.10"
