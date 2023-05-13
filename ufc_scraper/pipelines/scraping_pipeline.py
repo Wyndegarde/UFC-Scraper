@@ -46,9 +46,14 @@ class ScrapingPipeline:
         homepage = HomepageScraper(
             "http://www.ufcstats.com/statistics/events/completed"
         )
-        links = homepage.scrape_url()
 
-        for link_to_event in links:
+        all_event_links: List[str] = homepage.scrape_url()
+
+        for link_to_event in all_event_links:
+            if event_cache.check_cache(link_to_event):
+                print(f"Skipping {link_to_event} as it has already been scraped.")
+                continue
+
             fight_card = CardScraper(link_to_event)
             date, location = fight_card.get_event_details()
             fight_links = fight_card.get_fight_links()
@@ -73,5 +78,12 @@ class ScrapingPipeline:
                 ).T
 
                 raw_data_processor.add_row(full_fight_details_df)
-            event_cache.add_to_cache(link_to_event)
-        raw_data_processor.write_csv()
+
+            link_to_event_df = pd.DataFrame.from_dict(
+                {"event_link": link_to_event}, orient="index"
+            ).T
+            event_cache.add_row(link_to_event_df)
+
+            raw_data_processor.write_csv()
+            event_cache.write_csv()
+            print(f"Finished scraping {link_to_event}")

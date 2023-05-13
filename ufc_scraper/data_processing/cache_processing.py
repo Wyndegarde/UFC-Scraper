@@ -1,10 +1,14 @@
-from typing import List
 import pandas as pd
 
 from ufc_scraper.base_classes import DataFrameABC
 
 
 class CacheProcessor(DataFrameABC):
+    """
+    This Class is responsible for checking for links that have already been scraped.
+    Currently skips events that have already been scraped and retrieves fighter profile information if it has already been processed.
+    """
+
     def __init__(
         self, csv_path: str, cache_column_name: str, allow_creation: bool = False
     ) -> None:
@@ -37,4 +41,4 @@ class CacheProcessor(DataFrameABC):
         Args:
             link_to_add (str): The link to add to the cache.
         """
-        self.object_df.loc[len(self.object_df)] = {self.cache_column_name: link_to_add}
+        # self.object_df.loc[len(self.object_df)] = {self.cache_column_name: link_to_add}

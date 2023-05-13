@@ -19,6 +19,7 @@ matplotlib = "*"
 seaborn = "*"
 types-beautifulsoup4 = "*"
 pandas-stubs = "*"
+rich = "*"
 
 [dev-packages]
 mypy = "*"
