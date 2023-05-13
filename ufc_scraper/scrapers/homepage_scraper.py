@@ -31,5 +31,9 @@ class HomepageScraper(ScraperABC):
         return links
 
     def scrape_url(self) -> List[str]:
-        return self._get_links()
-        # return ["http://www.ufcstats.com/event-details/3c6976f8182d9527"]
+        # return self._get_links()
+        return ["http://www.ufcstats.com/event-details/3c6976f8182d9527",
+                "http://www.ufcstats.com/event-details/51b1e2fd9872005b",
+                "http://www.ufcstats.com/event-details/6fb1ba67bef41b37",
+                "http://www.ufcstats.com/event-details/15b1b21cd743d652",
+                "http://www.ufcstats.com/event-details/3dc3022232b79c7a"]
