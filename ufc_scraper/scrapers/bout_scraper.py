@@ -2,7 +2,7 @@
 Module to get the information for each bout on a card.
 """
 import re
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple
 
 from ufc_scraper.base_classes import ScraperABC
 
@@ -12,15 +12,18 @@ class BoutScraper(ScraperABC):
     Class to scrape the information for each bout on a card.
     """
 
-    def __init__(self, url: str) -> None:
+    def __init__(self, url: str, date: str, location: str) -> None:
         """
         Instantiates the class and calls the parent class to get the soup object.
 
         Args:
             url (str): URL to a specific bout on a card.
+            date (str): The date the bout took place
+            location (str): The location the bout took place.
         """
         super().__init__(url)
         self.fight = self._get_soup()
+        self.card_info = {"date": date, "location": location}
 
     def _extract_weight(self) -> Tuple[str, str]:
         """
@@ -64,16 +67,20 @@ class BoutScraper(ScraperABC):
             win = "W"
         return win
 
-    def _get_fight_details(self) -> Any:
+    def _get_fight_info(self) -> Dict[str, str]:
         """
-        Gets the fight details for each bout.
+        Gets the shared bout information between both fighters.
         Returns:
             Any: Still in progress.
         """
         weight_class, title_bout = self._extract_weight()
         outcome = self._extract_bout_outcome()
-
-        return weight_class, title_bout, outcome
+        fight_info = {
+            "weight_class": weight_class,
+            "title_bout": title_bout,
+            "winner": outcome,
+        }
+        return fight_info
 
     def _get_fight_stats_header(self) -> List[str]:
         """
@@ -96,24 +103,39 @@ class BoutScraper(ScraperABC):
 
         return self._apply_rb_prefix(header)
 
-    def get_fight_stats(self) -> Dict[str, str]:
+    def _extract_bout_stats(self) -> Dict[str, str]:
         """
         Extracts the stats for both fighters in the bout.
 
         Returns:
             Dict[str, str]: Dictionary where key = stat name and value = stat.
         """
-        table: List[str] = []
+        bout_stats: List[str] = []
         # Goes through the table containing the key information from each fight and stores the stats in a list.
         for link in self.fight.find_all(class_="b-fight-details__table-text", limit=20):
             entry: str = self._clean_text(link.get_text())
-            table.append(entry)
+            bout_stats.append(entry)
 
-        header: List[str] = self._get_fight_stats_header()
-        header_and_table: Dict[str, str] = dict(zip(header, table))
-        return header_and_table
+        bout_header: List[str] = self._get_fight_stats_header()
+        bout_details: Dict[str, str] = dict(zip(bout_header, bout_stats))
+        fight_info: Dict[str, str] = self._get_fight_info()
+
+        # Done this way so that the order when converted to DF is ordered how I want it.
+        full_bout_details: Dict[str, str] = {
+            **self.card_info,
+            **fight_info,
+            **bout_details,
+        }
+
+        return full_bout_details
 
     def get_fighter_links(self) -> List[str]:
+        """
+        Gets the links to each fighter's profile page for a given bout
+
+        Returns:
+            List[str]: List of links to each fighter's profile page.
+        """
         fighter_links: List[str] = []
         # Gets the links to each fighter's profile page and stores them in a list.
         for link in self.fight.find_all(
@@ -123,4 +145,7 @@ class BoutScraper(ScraperABC):
         return fighter_links
 
     def scrape_url(self):
-        ...
+        full_bout_details = self._extract_bout_stats()
+        fighter_links = self.get_fighter_links()
+
+        return full_bout_details, fighter_links

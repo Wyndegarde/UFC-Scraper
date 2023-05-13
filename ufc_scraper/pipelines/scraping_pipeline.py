@@ -1,5 +1,6 @@
 import pandas as pd
 
+from ufc_scraper.data_processing import RawDataProcessor, CacheProcessor
 from ufc_scraper.scrapers import (
     HomepageScraper,
     BoutScraper,
@@ -28,18 +29,22 @@ class ScrapingPipeline:
             fight_links = fight_card.get_fight_links()
 
             for fight in fight_links:
-                bout = BoutScraper(fight)
-                bout_stats = bout.get_fight_stats()
-                bout_stats_df = pd.DataFrame.from_dict(bout_stats, orient="index").T
+                bout = BoutScraper(url=fight, date=date, location=location)
+                full_bout_details, fighter_links = bout.scrape_url()
+
+                bout_stats_df = pd.DataFrame.from_dict(
+                    full_bout_details, orient="index"
+                ).T
 
                 #! This is wrong. need to instantiate the dataframe object.
-                self.output_dataframe = pd.concat(
-                    [self.output_dataframe, bout_stats_df], axis=0
-                )
-                fighter_profile_links = bout.get_fighter_links()
-                for fighter_profile_url in fighter_profile_links:
-                    fighter_profile = FighterScraper(fighter_profile_url)
-                    fighter_stats = fighter_profile.get_fighter_details()
-                    self.output_dataframe = pd.concat(
-                        [self.output_dataframe, fighter_stats], axis=0
-                    )
+                # self.output_dataframe = pd.concat(
+                #     [self.output_dataframe, bout_stats_df], axis=0
+                # )
+
+                assert len(fighter_links) >= 2, "There should be two fighters per bout."
+
+                red_fighter = FighterScraper(fighter_links[0])
+                blue_fighter = FighterScraper(fighter_links[1])
+
+                red_fighter_profile = red_fighter.get_fighter_details()
+                blue_fighter_profile = blue_fighter.get_fighter_details()

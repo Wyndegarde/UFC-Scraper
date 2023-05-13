@@ -18,7 +18,7 @@ def test_single_event():
     # Scrape a signle fight from the event
     first_fight = BoutScraper(fight_links[0])
 
-    bout_stats = first_fight.get_fight_stats()
+    bout_stats = first_fight._extract_bout_stats()
     print(bout_stats)
 
     # add bout stats to df

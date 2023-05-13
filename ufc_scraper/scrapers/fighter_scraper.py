@@ -21,13 +21,15 @@ class FighterScraper(ScraperABC):
         super().__init__(url)
         self.fighter = self._get_soup()
 
-    def get_fighter_details(self) -> Dict[str, str]:
+    def get_fighter_details(self, red_corner: bool) -> Dict[str, str]:
         """
         Generates a dictionary containing all of the information for a single fighter.
 
         Returns:
             Dict[str, str]: fighter information. key = name of stat, value = stat.
         """
+        prefix = self.red_prefix if red_corner else self.blue_prefix
+        print(prefix)
 
         # First find their record.
         record = self.fighter.find(class_="b-content__title-record")
