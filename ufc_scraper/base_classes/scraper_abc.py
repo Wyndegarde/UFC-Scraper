@@ -24,6 +24,8 @@ class ScraperABC(ABC):
             url (str): URL to scrape.
         """
         self.url = url
+        self.red_prefix = "red_"
+        self.blue_prefix = "blue_"
 
     def _get_soup(
         self, params: Optional[Dict[str, Union[str, int]]] = None
@@ -64,16 +66,14 @@ class ScraperABC(ABC):
         Returns:
             List[str]: a list of strings with the prefix applied to each entry.
         """
-        red_prefix: str = "red_"
-        blue_prefix: str = "blue_"
 
         if isinstance(text, list):
             return [
-                red_prefix + entry if i % 2 == 0 else blue_prefix + entry
+                self.red_prefix + entry if i % 2 == 0 else self.blue_prefix + entry
                 for i, entry in enumerate(text)
             ]
         elif isinstance(text, str):
-            return [red_prefix + text, blue_prefix + text]
+            return [self.red_prefix + text, self.blue_prefix + text]
 
     @abstractmethod
     def scrape_url(self):
