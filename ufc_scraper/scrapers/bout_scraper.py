@@ -53,16 +53,14 @@ class BoutScraper(ScraperABC):
         Returns:
             str: outcome of the bout.
         """
-        outcome: str = (
-            self.fight.find(class_="b-fight-details__person")  # type: ignore
-            .find(
-                class_="b-fight-details__person-status b-fight-details__person-status_style_gray"
-            )
-            .text
+        outcome: str = self.fight.find(
+            class_="b-fight-details__person"
+        ).find(  # type: ignore
+            class_="b-fight-details__person-status b-fight-details__person-status_style_gray"
         )  # type: ignore
 
         if outcome:
-            win: str = self._clean_text(outcome)
+            win: str = self._clean_text(outcome.text)  # type: ignore
         else:
             win = "W"
         return win

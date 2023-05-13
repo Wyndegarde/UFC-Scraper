@@ -6,7 +6,7 @@ class DataFrameABC(ABC):
     def __init__(self, csv_path: str, allow_creation: bool = False) -> None:
         self.csv_path = csv_path
         self.allow_creation = allow_creation
-        self.df = self._instantiate_df()
+        self.object_df: pd.DataFrame = self._instantiate_df()
 
     def _instantiate_df(self) -> pd.DataFrame:
         try:
@@ -20,3 +20,6 @@ class DataFrameABC(ABC):
                           check input path or for other errors."
                 ) from exc
         return data_frame
+
+    def write_csv(self) -> None:
+        self.object_df.to_csv(self.csv_path, index=False)
