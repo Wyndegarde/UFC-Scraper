@@ -7,7 +7,7 @@ Still a work in progress.
 
 
 
-![ConsoleExample](https://github.com/Wyndegarde/UFC-Scraper/assets/console_logging.png)
+![ConsoleExample](https://github.com/Wyndegarde/UFC-Scraper/blob/main/assets/console_logging.png)
 
 
 
