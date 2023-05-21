@@ -1,6 +1,7 @@
 import re
 from datetime import datetime
 import numpy as np
+import pandas as pd
 
 from ufc_scraper.base_classes import DataFrameABC
 
@@ -21,28 +22,77 @@ class DataCleaningHandler(DataFrameABC):
             lambda x: pattern.sub("", x)
         )
 
-    def _display_total_placeholder_values(self):
+    def get_height_reach_cols(self):
+        return [
+            column
+            for column in self.object_df.columns
+            if "Reach" in column or "Height" in column
+        ]
+
+    def get_drop_columns(self):
         drop_columns = []
+        pattern = r"^---$"  # Pattern to match strings consisting of one or more dashes
+
         # Will drop the rows with missing days of birth for now. Return to this and investigate
         for column in self.object_df.columns:
-            if len(self.object_df[column][self.object_df[column] == "--"]) > 0:
-                print(
-                    column, len(self.object_df[column][self.object_df[column] == "--"])
-                )
-            if len(self.object_df[column][self.object_df[column] == "---"]) > 0:
+            if any(re.match(pattern, str(value)) for value in self.object_df[column]):
                 drop_columns.append(column)
                 print(
-                    column, len(self.object_df[column][self.object_df[column] == "---"])
+                    column,
+                    len(
+                        self.object_df[column][
+                            self.object_df[column].str.match(pattern)
+                        ]
+                    ),
                 )
 
         return drop_columns
 
-    def get_height_reach_cols(self):
-        height_reach = []
+    def get_dob_cols(self):
+        return [column for column in self.object_df.columns if "DOB" in column]
+
+    def get_of_columns(self):
+        of_columns = []
         for column in self.object_df.columns:
-            if "Reach" in column or "Height" in column:
-                height_reach.append(column)
-        return height_reach
+            type_condition = self.object_df[column].dtype == object
+            of_condition = (
+                sum(self.object_df[column].apply(lambda x: "of" in str(x))) > 0
+            )
+            name_condition = "fighter" not in column.lower()
+
+            if type_condition and of_condition and name_condition:
+                of_columns.append(column)
+
+        return of_columns
+
+    def handle_of_columns(self):
+        of_columns = self.get_of_columns()
+        for (
+            column
+        ) in (
+            of_columns
+        ):  # This block converts all the columns from strings containing "x of y" to two columns corresponding to attempted and landed.
+            column_as_list = self.object_df[column].tolist()
+            splitting_column = []
+
+            for each in column_as_list:
+                splitting_column.append(each.split(" of "))
+
+            attempted = [float(i[1]) for i in splitting_column]
+            landed = [float(i[0]) for i in splitting_column]
+
+            attempted_suffix = column + "_attempted"
+            landed_suffix = column + "_landed"
+            percent_suffix = column + "_percent"
+
+            self.object_df[attempted_suffix] = attempted
+            self.object_df[landed_suffix] = landed
+            self.object_df[percent_suffix] = (
+                self.object_df[landed_suffix] / self.object_df[attempted_suffix]
+            )
+            self.object_df[percent_suffix] = self.object_df[percent_suffix].fillna(0)
+
+            self.object_df.drop(columns=column, inplace=True)
 
     # Convert both reach columns into cm
     def _convert_reach(self, reach):
@@ -53,7 +103,7 @@ class DataCleaningHandler(DataFrameABC):
             clean_reach = float(reach.replace('"', ""))
             return clean_reach * 2.54
 
-    def _convert_height_to_cm(self, height: str) -> float:
+    def _convert_height(self, height: str) -> float:
         """
         Converts a height in feet'inches to centimeters.
         """
@@ -86,53 +136,92 @@ class DataCleaningHandler(DataFrameABC):
                     lambda x: datetime.strptime(x, "%b %d, %Y")
                 )
 
-    def replace_nan_values(self):
-        """
-        Replaces all NaN values with 0.
-        """
-        self.object_df = self.object_df.replace("---", "0")
-        self.object_df["blue_STANCE"] = self.object_df["blue_STANCE"].replace(
-            np.nan, "Orthodox"
-        )  # Choosing the replace with Orthodox because it is the most common stance.
-        self.object_df["red_STANCE"] = self.object_df["blue_STANCE"].replace(
-            np.nan, "Orthodox"
-        )  # see above
-
-    def clean_columns(self):
-        # This block here pulls all the percentage columns, then removes the % from each and converts them to decimal.
-        percent_names = []
-        of_columns = []
-        height_columns = []
-        reach_columns = []
-
-        for name in self.object_df.columns:
-            if "percent" in name:
-                percent_names.append(name)
-            # This is definitely not the best way to do this, find better way.
-            elif (
-                self.object_df[name].dtype == object
-                and sum(self.object_df[name].apply(lambda x: "of" in str(x))) > 0
-                and name != "red_fighter"
-                and name != "blue_fighter"
-            ):
-                # This block gets all the columns with ' x of y' in them and stores them in a list for processing.
-                of_columns.append(name)
-
-            elif (
-                "Height" in name
-            ):  # This block converts the height and reach columns from inches to cm.
-                height_columns.append(name)
-                self.object_df[name] = self.object_df[name].apply(
-                    lambda x: self._convert_height_to_cm(x)
+    def run_pipeline(self):
+        self.object_df.replace("---", "0", inplace=True)
+        self.handle_of_columns()
+        self._clean_weight_class()
+        height_reach_cols = [
+            column
+            for column in self.object_df.columns
+            if "Reach" in column or "Height" in column
+        ]
+        self.object_df.dropna(subset=height_reach_cols, inplace=True)
+        for column in height_reach_cols:
+            if "Height" in column:
+                self.object_df[column] = self.object_df[column].apply(
+                    self._convert_height
+                )
+            else:
+                self.object_df[column] = self.object_df[column].apply(
+                    self._convert_reach
                 )
 
-            elif "Reach" in name:
-                reach_columns.append(name)
-                self.object_df[name] = self.object_df[name].apply(
-                    lambda x: self._convert_reach(x)
-                )
+        percent_cols = [col for col in self.object_df.columns if "%" in col]
+        print(percent_cols)
+        for column in percent_cols:
+            self.object_df[column] = (
+                self.object_df[column].str.strip("%").astype("int") / 100
+            )
 
-            for column in percent_names:
-                self.object_df[column] = (
-                    self.object_df[column].str.strip("%").astype("int") / 100
-                )
+        self.object_df["blue_STANCE"].replace(np.nan, "Orthodox", inplace=True)
+        self.object_df["red_STANCE"].replace(np.nan, "Orthodox", inplace=True)
+        self.object_df.drop(
+            self.object_df[self.object_df["blue_DOB"] == "--"].index[0], inplace=True
+        )
+        self.object_df.drop(
+            self.object_df[self.object_df["red_DOB"] == "--"].index[0], inplace=True
+        )
+        # self.object_df.replace("---", "0", inplace=True)
+
+        height_columns = [
+            column for column in self.object_df.columns if "Height" in column
+        ]
+        reach_columns = [
+            column for column in self.object_df.columns if "Reach" in column
+        ]
+
+        self.object_df["Height_diff"] = (
+            self.object_df[height_columns[0]] - self.object_df[height_columns[1]]
+        )  # Red height minus Blue height. So positve value suggests red taller, negative implies red shorter.
+        self.object_df["Reach_diff"] = (
+            self.object_df[reach_columns[0]] - self.object_df[reach_columns[1]]
+        )  # Same as for height.
+
+        self.object_df["red_age"] = (
+            self.object_df["date"]
+            .sub(self.object_df["red_DOB"])
+            .dt.days.div(365.25)
+            .round(0)
+            .astype(int)
+        )
+        self.object_df["blue_age"] = (
+            self.object_df["date"]
+            .sub(self.object_df["blue_DOB"])
+            .dt.days.div(365.25)
+            .round(0)
+            .astype(int)
+        )
+
+        # I need: strike defence and takedown defence for red and blue fighters
+
+        self.object_df["red_sig_strike_defence_percent"] = (
+            1 - self.object_df["blue_sig_strike_percent"]
+        )
+        self.object_df["blue_sig_strike_defence_percent"] = (
+            1 - self.object_df["red_sig_strike_percent"]
+        )
+
+        self.object_df["red_takedowns_defence_percent"] = (
+            1 - self.object_df["blue_takedowns_percent"]
+        )
+        self.object_df["blue_takedowns_defence_percent"] = (
+            1 - self.object_df["red_takedowns_percent"]
+        )
+
+        # number_of_fights_per_fighter = (
+        #     self.object_df["red_fighter"]
+        #     .append(self.object_df["blue_fighter"])
+        #     .value_counts()
+        # )
+
+        pd.write_csv(self.object_df, "cleaned_data.csv")

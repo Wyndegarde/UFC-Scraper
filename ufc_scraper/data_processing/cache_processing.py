@@ -1,3 +1,4 @@
+from typing import List, Set
 import pandas as pd
 
 from ufc_scraper.base_classes import DataFrameABC
@@ -15,6 +16,29 @@ class CacheProcessor(DataFrameABC):
         super().__init__(csv_path, allow_creation)
         self.cache_df: pd.DataFrame = self._instantiate_df()
         self.cache_column_name: str = cache_column_name
+
+    def filter_cache(self, event_links: List[str]) -> List[str]:
+        """
+        Filters the event links to only those that have not been scraped yet.
+
+        Args:
+            event_links (List[str]): List of event links to filter.
+
+        Returns:
+            List[str]: List of event links that have not been scraped yet.
+        """
+        try:
+            cached_events: Set[str] = set(
+                self.cache_df[self.cache_column_name].tolist()
+            )
+            event_set: Set[str] = set(event_links)
+            filtered_event_links: List[str] = list(event_set - cached_events)
+
+            return filtered_event_links
+
+        except KeyError:
+            print("KeyError, returning all event links")
+            return event_links
 
     def check_cache(self, link: str) -> bool:
         """

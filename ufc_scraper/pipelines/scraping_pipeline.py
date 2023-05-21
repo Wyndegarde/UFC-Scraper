@@ -76,13 +76,13 @@ class ScrapingPipeline:
         )
 
         all_event_links: List[str] = homepage.scrape_url()
-
-        for link_to_event in all_event_links:
-            if event_cache.check_cache(link_to_event):
-                console.print(
-                    f"Skipping {link_to_event} as it has already been scraped."
-                )
-                continue
+        filtered_event_links: List[str] = event_cache.filter_cache(all_event_links)
+        for link_to_event in filtered_event_links:
+            # if event_cache.check_cache(link_to_event):
+            #     console.print(
+            #         f"Skipping {link_to_event} as it has already been scraped."
+            #     )
+            #     continue
 
             # Instantiate the card scraper and get the event details.
             fight_card = CardScraper(link_to_event)
