@@ -73,11 +73,7 @@ class DataCleaningHandler(DataFrameABC):
             of_columns
         ):  # This block converts all the columns from strings containing "x of y" to two columns corresponding to attempted and landed.
             column_as_list = self.object_df[column].tolist()
-            splitting_column = []
-
-            for each in column_as_list:
-                splitting_column.append(each.split(" of "))
-
+            splitting_column = [each.split(" of ") for each in column_as_list]
             attempted = [float(i[1]) for i in splitting_column]
             landed = [float(i[0]) for i in splitting_column]
 
@@ -96,12 +92,10 @@ class DataCleaningHandler(DataFrameABC):
 
     # Convert both reach columns into cm
     def _convert_reach(self, reach):
-        # bit of a messy change, but currently I replace all of these strings with NaN, then work out the newly mean of the column excluding these values and finally replace the NaN with the mean.
         if reach == "--":
             return np.nan
-        else:
-            clean_reach = float(reach.replace('"', ""))
-            return clean_reach * 2.54
+        clean_reach = float(reach.replace('"', ""))
+        return clean_reach * 2.54
 
     def _convert_height(self, height: str) -> float:
         """
@@ -109,11 +103,10 @@ class DataCleaningHandler(DataFrameABC):
         """
         if height == "--":
             return 0
-        else:
-            feet_str, inches_str = height.split("'")
-            feet = int(feet_str)
-            inches = int(inches_str.replace('"', ""))
-            return round((feet * 12 + inches) * 2.54, 0)
+        feet_str, inches_str = height.split("'")
+        feet = int(feet_str)
+        inches = int(inches_str.replace('"', ""))
+        return round((feet * 12 + inches) * 2.54, 0)
 
     def drop_unwanted_data(self, drop_columns):
         """
