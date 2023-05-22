@@ -38,3 +38,5 @@ class PathSettings:
     FIGHTER_PROFILE_CACHE_CSV = os.path.join(
         BASE_DIR, "data", "fighter_profile_cache.csv"
     )
+
+    CLEAN_DATA_CSV = os.path.join(BASE_DIR, "data", "clean_ufc_data.csv")

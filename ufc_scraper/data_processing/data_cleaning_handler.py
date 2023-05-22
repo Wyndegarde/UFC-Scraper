@@ -1,9 +1,13 @@
+"""
+This script is respoonsible for taking in the scraped data and ceaning it for use in the model.
+"""
+
 import re
 from datetime import datetime
 import numpy as np
-import pandas as pd
 
 from ufc_scraper.base_classes import DataFrameABC
+from ufc_scraper.config import PathSettings
 
 
 class DataCleaningHandler(DataFrameABC):
@@ -21,13 +25,6 @@ class DataCleaningHandler(DataFrameABC):
         self.object_df["weight_class"] = self.object_df["weight_class"].apply(
             lambda x: pattern.sub("", x)
         )
-
-    def get_height_reach_cols(self):
-        return [
-            column
-            for column in self.object_df.columns
-            if "Reach" in column or "Height" in column
-        ]
 
     def get_drop_columns(self):
         drop_columns = []
@@ -77,9 +74,9 @@ class DataCleaningHandler(DataFrameABC):
             attempted = [float(i[1]) for i in splitting_column]
             landed = [float(i[0]) for i in splitting_column]
 
-            attempted_suffix = column + "_attempted"
-            landed_suffix = column + "_landed"
-            percent_suffix = column + "_percent"
+            attempted_suffix = f"{column}_attempted"
+            landed_suffix = f"{column}_landed"
+            percent_suffix = f"{column}_percent"
 
             self.object_df[attempted_suffix] = attempted
             self.object_df[landed_suffix] = landed
@@ -108,31 +105,7 @@ class DataCleaningHandler(DataFrameABC):
         inches = int(inches_str.replace('"', ""))
         return round((feet * 12 + inches) * 2.54, 0)
 
-    def drop_unwanted_data(self, drop_columns):
-        """
-        Drops columns that are not needed for the model.
-        """
-        self.object_df = self.object_df[self.object_df["blue_DOB"] != "--"]
-        self.object_df = self.object_df[self.object_df["red_DOB"] != "--"]
-        self.object_df.drop(drop_columns, axis=1, inplace=True)
-
-    def format_date_columns(self):
-        """
-        Formats the date columns to datetime objects.
-        """
-        self.object_df["date"] = self.object_df["date"].apply(
-            lambda x: datetime.strptime(x, "%B %d, %Y")
-        )
-        for column in self.object_df.columns:
-            if "DOB" in column:
-                self.object_df[column] = self.object_df[column].apply(
-                    lambda x: datetime.strptime(x, "%b %d, %Y")
-                )
-
-    def run_pipeline(self):
-        self.object_df.replace("---", "0", inplace=True)
-        self.handle_of_columns()
-        self._clean_weight_class()
+    def handle_height_reach(self):
         height_reach_cols = [
             column
             for column in self.object_df.columns
@@ -148,24 +121,6 @@ class DataCleaningHandler(DataFrameABC):
                 self.object_df[column] = self.object_df[column].apply(
                     self._convert_reach
                 )
-
-        percent_cols = [col for col in self.object_df.columns if "%" in col]
-        print(percent_cols)
-        for column in percent_cols:
-            self.object_df[column] = (
-                self.object_df[column].str.strip("%").astype("int") / 100
-            )
-
-        self.object_df["blue_STANCE"].replace(np.nan, "Orthodox", inplace=True)
-        self.object_df["red_STANCE"].replace(np.nan, "Orthodox", inplace=True)
-        self.object_df.drop(
-            self.object_df[self.object_df["blue_DOB"] == "--"].index[0], inplace=True
-        )
-        self.object_df.drop(
-            self.object_df[self.object_df["red_DOB"] == "--"].index[0], inplace=True
-        )
-        # self.object_df.replace("---", "0", inplace=True)
-
         height_columns = [
             column for column in self.object_df.columns if "Height" in column
         ]
@@ -195,21 +150,58 @@ class DataCleaningHandler(DataFrameABC):
             .astype(int)
         )
 
-        # I need: strike defence and takedown defence for red and blue fighters
+    def format_date_columns(self):
+        """
+        Formats the date columns to datetime objects.
+        """
+        self.object_df["date"] = self.object_df["date"].apply(
+            lambda x: datetime.strptime(x, "%B %d, %Y")
+        )
+        self.object_df.drop(
+            self.object_df[self.object_df["blue_DOB"] == "--"].index, inplace=True
+        )
+        self.object_df.drop(
+            self.object_df[self.object_df["red_DOB"] == "--"].index, inplace=True
+        )
+        for column in self.object_df.columns:
+            if "DOB" in column:
+                self.object_df[column] = self.object_df[column].apply(
+                    lambda x: datetime.strptime(x, "%b %d, %Y")
+                )
 
+    def handle_percent_columns(self):
+        percent_cols = [col for col in self.object_df.columns if "%" in col]
+        for column in percent_cols:
+            self.object_df[column] = (
+                self.object_df[column].str.strip("%").astype("int") / 100
+            )
+        # I need: strike defence and takedown defence for red and blue fighters
         self.object_df["red_sig_strike_defence_percent"] = (
-            1 - self.object_df["blue_sig_strike_percent"]
+            1 - self.object_df["blue_Sig. str. %"]
         )
         self.object_df["blue_sig_strike_defence_percent"] = (
-            1 - self.object_df["red_sig_strike_percent"]
+            1 - self.object_df["red_Sig. str. %"]
         )
 
         self.object_df["red_takedowns_defence_percent"] = (
-            1 - self.object_df["blue_takedowns_percent"]
+            1 - self.object_df["blue_Td %"]
         )
         self.object_df["blue_takedowns_defence_percent"] = (
-            1 - self.object_df["red_takedowns_percent"]
+            1 - self.object_df["red_Td %"]
         )
+
+    def run_pipeline(self):
+        self.object_df.replace("---", "0", inplace=True)
+        self.handle_of_columns()
+        self._clean_weight_class()
+
+        self.format_date_columns()
+
+        self.handle_height_reach()
+        self.handle_percent_columns()
+
+        self.object_df["blue_STANCE"].replace(np.nan, "Orthodox", inplace=True)
+        self.object_df["red_STANCE"].replace(np.nan, "Orthodox", inplace=True)
 
         # number_of_fights_per_fighter = (
         #     self.object_df["red_fighter"]
@@ -217,4 +209,4 @@ class DataCleaningHandler(DataFrameABC):
         #     .value_counts()
         # )
 
-        pd.write_csv(self.object_df, "cleaned_data.csv")
+        self.object_df.to_csv(PathSettings.CLEAN_DATA_CSV, index=False)
