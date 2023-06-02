@@ -51,7 +51,7 @@ class CacheProcessor(DataFrameABC):
             bool: True if the link exists in the cache, False if it does not.
         """
         try:
-            return bool(link in self.object_df[self.cache_column_name].values)
+            return link in self.object_df[self.cache_column_name].values
         except KeyError:
             print("KeyError, returning False")
             return False
