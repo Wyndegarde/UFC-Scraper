@@ -1,1 +1,2 @@
+from .data_cleaning_pipeline import DataCleaningPipeline
 from .scraping_pipeline import ScrapingPipeline

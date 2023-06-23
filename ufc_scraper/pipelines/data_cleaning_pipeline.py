@@ -13,7 +13,7 @@ from ufc_scraper.base_classes import DataFrameABC
 from ufc_scraper.config import PathSettings
 
 
-class DataCleaningHandler(DataFrameABC):
+class DataCleaningPipeline(DataFrameABC):
     def __init__(self, csv_path: str, allow_creation: bool = False) -> None:
         super().__init__(csv_path, allow_creation)
         self.height_reach_cols = [
