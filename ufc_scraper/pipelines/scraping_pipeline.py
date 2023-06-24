@@ -64,19 +64,15 @@ class ScrapingPipeline:
         raw_data_processor = RawDataProcessor(
             csv_path=PathSettings.RAW_DATA_CSV, allow_creation=True
         )
-        event_cache = CacheProcessor(
-            csv_path=PathSettings.EVENT_CACHE_CSV,
-            cache_column_name="event_link",
-            allow_creation=True,
-        )
 
         # Instantiate the homepage scraper and get all the links to each event.
         homepage = HomepageScraper(
-            "http://www.ufcstats.com/statistics/events/completed"
+            url="http://www.ufcstats.com/statistics/events/completed",
+            cache_file_path=PathSettings.EVENT_CACHE_JSON,
         )
 
-        all_event_links: List[str] = homepage.scrape_url()
-        filtered_event_links: List[str] = event_cache.filter_cache(all_event_links)
+        filtered_event_links: List[str] = homepage.scrape_url()
+        
         for link_to_event in filtered_event_links:
             # if event_cache.check_cache(link_to_event):
             #     console.print(
@@ -128,8 +124,8 @@ class ScrapingPipeline:
             link_to_event_df = pd.DataFrame.from_dict(
                 {"event_link": link_to_event}, orient="index"
             ).T
-            event_cache.add_row(link_to_event_df)
+            homepage.cache.append(link_to_event)
+            homepage.write_cache()
             console.rule("", style="black")
             raw_data_processor.write_csv()
-            event_cache.write_csv()
             console.log(f"Finished scraping {link_to_event}")
