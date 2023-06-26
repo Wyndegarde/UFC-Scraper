@@ -5,7 +5,7 @@ from rich.progress import Progress, TimeElapsedColumn
 
 import pandas as pd
 
-from ufc_scraper.data_processing import RawDataProcessor
+from ufc_scraper.processors import DataProcessor
 from ufc_scraper.scrapers import (
     HomepageScraper,
     BoutScraper,
@@ -67,13 +67,13 @@ class ScrapingPipeline:
             justify="center",
         )
 
-    def _scrape_fight(self, fight: str, date: str, location: str, raw_data_processor: RawDataProcessor) -> None:
+    def _scrape_fight(
+        self, fight: str, date: str, location: str, raw_data_processor: DataProcessor
+    ) -> None:
         bout: BoutScraper = BoutScraper(url=fight, date=date, location=location)
         full_bout_details, fighter_links = bout.scrape_url()
 
-        fighter_profiles: Dict[str, str] = self._scrape_fighter_profiles(
-            fighter_links
-        )
+        fighter_profiles: Dict[str, str] = self._scrape_fighter_profiles(fighter_links)
 
         full_fight_details: Dict[str, str] = {
             **full_bout_details,
@@ -95,7 +95,7 @@ class ScrapingPipeline:
         """
 
         # Instantiate all data processors required for scraping.
-        raw_data_processor = RawDataProcessor(
+        raw_data_processor = DataProcessor(
             csv_path=PathSettings.RAW_DATA_CSV, allow_creation=True
         )
 
@@ -138,4 +138,3 @@ class ScrapingPipeline:
             if (index % 10 == 0) or (total_events - index <= 10):
                 homepage.write_cache()
                 raw_data_processor.write_csv()
-            
