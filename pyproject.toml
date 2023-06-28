@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>= 0.61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ufc_scraper"
+version = "0.0.1"
+authors = [
+  { name="Liam Humphreys", email="LiamJamesHumphreys@gmail.com" },
+]
+description = "A package for scraping UFC data from the web."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+"requests==2.28.1",
+"pandas ==1.4.3"
+"numpy==1.23.1",
+"bs4==0.0.1",
+"scikit-learn==1.1.1",
+"statsmodels==0.13.2"
+"rich",
+"lxml"
+]
+
+[project.optional-dependencies]
+test = [
+"pytest"
+]
+
+# This doesn't work yet.
+[project.scripts]
+scrape = ufc_scraper.main:main
+
+[tool.setuptools]
+packages = ["ufc_scraper"]
+
+

@@ -21,6 +21,8 @@ pandas-stubs = "*"
 mypy = "*"
 black = "*"
 pylint = "*"
+twine = "*"
+build = "*"
 
 [requires]
 python_version = "3.10"
