@@ -2,14 +2,6 @@
 This script is respoonsible for taking in the scraped data and ceaning it for use in the model.
 """
 
-import re
-from pathlib import Path
-from datetime import datetime
-
-import numpy as np
-
-# import pandas as pd
-
 from ufc_scraper.processors import DataProcessor
 from ufc_scraper.config import PathSettings
 

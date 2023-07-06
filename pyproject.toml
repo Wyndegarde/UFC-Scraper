@@ -19,11 +19,11 @@ classifiers = [
 ]
 dependencies = [
 "requests==2.28.1",
-"pandas ==1.4.3"
+"pandas ==1.4.3",
 "numpy==1.23.1",
 "bs4==0.0.1",
 "scikit-learn==1.1.1",
-"statsmodels==0.13.2"
+"statsmodels==0.13.2",
 "rich",
 "lxml"
 ]
@@ -34,8 +34,8 @@ test = [
 ]
 
 # This doesn't work yet.
-[project.scripts]
-scrape = ufc_scraper.main:main
+# [project.scripts]
+# scraper = ufc_scraper.main:main
 
 [tool.setuptools]
 packages = ["ufc_scraper"]
