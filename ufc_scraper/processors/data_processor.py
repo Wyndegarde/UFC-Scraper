@@ -9,6 +9,7 @@ from pathlib import Path
 from ufc_scraper.base_classes import DataFrameABC
 from ufc_scraper.config import PathSettings
 
+
 class DataProcessor(DataFrameABC):
     def __init__(self, csv_path: Path, allow_creation: bool = False) -> None:
         super().__init__(csv_path, allow_creation)
@@ -21,6 +22,7 @@ class DataProcessor(DataFrameABC):
             for column in self.object_df.columns
             if "reach" in column.lower() or "height" in column.lower()
         ]
+
     def _create_height_reach_na_filler_df(self):
         reach_height_df = self.object_df.copy()
         reach_height_df.dropna(subset=self.height_reach_cols, inplace=True)
