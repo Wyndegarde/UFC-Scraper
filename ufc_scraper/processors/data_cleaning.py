@@ -26,9 +26,8 @@ class DataProcessor(DataFrameABC):
     def _create_height_reach_na_filler_df(self):
         reach_height_df = self.object_df.copy()
         reach_height_df.dropna(subset=self.height_reach_cols, inplace=True)
-
         self._apply_hr_conversions(reach_height_df)
-        grouping_by_weight_classes = reach_height_df.groupby("weight_class").mean()
+        grouping_by_weight_classes = reach_height_df.groupby("weight_class")[self.height_reach_cols].mean()
 
         return grouping_by_weight_classes[self.height_reach_cols]
 
@@ -238,5 +237,5 @@ class DataProcessor(DataFrameABC):
         #     .append(self.object_df["blue_fighter"])
         #     .value_counts()
         # )
-
+        self.object_df.columns = self.object_df.columns.str.replace(".", "").str.replace(" ","_").str.lower()
         self.object_df.to_csv(PathSettings.CLEAN_DATA_CSV, index=False)
