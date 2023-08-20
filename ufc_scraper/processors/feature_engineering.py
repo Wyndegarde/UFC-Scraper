@@ -198,3 +198,87 @@ class FeatureEngineeringProcessor(DataFrameABC):
                         self.object_df.loc[i, "red_" + column] = df.loc[i, column]
                     elif fighter in self.object_df.loc[i, "blue_fighter"]:
                         self.object_df.loc[i, "blue_" + column] = df.loc[i, column]
+
+
+class FeatureEngineering(DataFrameABC):
+    def get_unique_fighters(self):
+        """
+        Responsible for holding the unique fighter names.
+        """
+        return np.unique(
+            np.concatenate(
+                [self.object_df["red_fighter"], self.object_df["blue_fighter"]],
+                axis=None,
+            )
+        )
+
+    def get_percent_cols(self):
+        """
+        Responsible for holding the column names of the percent stats.
+        """
+        percent_columsn = list(
+            set(
+                [
+                    column.replace("red_", "").replace("_blue", "")
+                    for column in self.object_df.columns
+                    if "%" in column
+                ]
+            )
+        )
+        return percent_columsn
+
+def populate_regression_df(x):
+    """
+    1. Instantiate new dataframe.
+    2. iterate through the percent stats columns
+    3. iterate through each fighter.
+    4. check if the fighter has more than 3 fights.
+    5. if so, build a dataframe for that fighter.
+    """
+
+    def create_fighter_df():
+        """
+        Responsible for creating a dataframe for each fighter.
+        end result is a df containing the stats for a fighter with more than three fights.
+        """
+        ...
+
+    main_df = pd.DataFrame()
+    if x >= 3:
+        new_df = create_fighter_df()
+
+    main_df = pd.concat([main_df, new_df], axis=1)
+
+    return main_df
+
+
+def create_regression_model():
+    """
+    Responsible for creating the regression models for each of the stats we are interested in.
+    Will return a trained regression model for each of the stats. to be used to fill missing values.
+    """
+    ...
+
+
+class AssumptionChecking:
+    """
+    Will hold all the methods for checking the assumptions of the regression models.
+    Mainly visualisations
+    """
+
+    ...
+
+
+def fill_missing_values():
+    """
+    Responsible for filling in the missing values of the dataframe.
+    uses the trained regression models to predict the missing values.
+    """
+    ...
+
+
+def test_filled_values():
+    """
+    Responsible for testing the filled values.
+    """
+    ...
