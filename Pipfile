@@ -16,6 +16,8 @@ lxml = "*"
 types-requests = "*"
 types-beautifulsoup4 = "*"
 pandas-stubs = "*"
+fastapi = "==0.101.1"
+uvicorn = {extras = ["standard"], version = "*"}
 
 [dev-packages]
 mypy = "*"
