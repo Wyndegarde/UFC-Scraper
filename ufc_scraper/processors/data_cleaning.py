@@ -27,7 +27,9 @@ class DataProcessor(DataFrameABC):
         reach_height_df = self.object_df.copy()
         reach_height_df.dropna(subset=self.height_reach_cols, inplace=True)
         self._apply_hr_conversions(reach_height_df)
-        grouping_by_weight_classes = reach_height_df.groupby("weight_class")[self.height_reach_cols].mean()
+        grouping_by_weight_classes = reach_height_df.groupby("weight_class")[
+            self.height_reach_cols
+        ].mean()
 
         return grouping_by_weight_classes[self.height_reach_cols]
 
@@ -99,8 +101,8 @@ class DataProcessor(DataFrameABC):
 
             self.object_df.drop(columns=column, inplace=True)
 
-    # Convert both reach columns into cm
     def _convert_reach(self, reach):
+        # Convert both reach columns into cm
         if reach == "--":
             return np.nan
         clean_reach = float(reach.replace('"', ""))
@@ -221,14 +223,27 @@ class DataProcessor(DataFrameABC):
                     ]
 
     def clean_raw_data(self):
+        # Data source represent no attempts as "---".
         self.object_df.replace("---", "0", inplace=True)
+
+        # Special bouts have things like TUF in the weight class. This removes that.
         self._clean_weight_class()
+
+        # Simply converts the date columns to datetime objects.
         self._format_date_columns()
+
+        # Data source has stats as "x of y". Split these into two cols.
         self._handle_attempt_landed_columns()
+
+        # small subset of rows have missing values for height and reach.
+        # Drops these for accuracy.
         height_reach_no_na_df = self._create_height_reach_na_filler_df()
         self._handle_height_reach(height_reach_no_na_df)
+
+        # Converts cols with % in them to floats.
         self._handle_percent_columns()
 
+        # Where missing, the stance is changed to the most common stance.
         self.object_df["blue_STANCE"].replace(np.nan, "Orthodox", inplace=True)
         self.object_df["red_STANCE"].replace(np.nan, "Orthodox", inplace=True)
 
@@ -237,5 +252,12 @@ class DataProcessor(DataFrameABC):
         #     .append(self.object_df["blue_fighter"])
         #     .value_counts()
         # )
-        self.object_df.columns = self.object_df.columns.str.replace(".", "").str.replace(" ","_").str.lower()
+
+        # Clean the column names
+        self.object_df.columns = (
+            self.object_df.columns.str.replace(".", "")
+            .str.replace(" ", "_")
+            .str.lower()
+        )
         self.object_df.to_csv(PathSettings.CLEAN_DATA_CSV, index=False)
+        # return self.object_df

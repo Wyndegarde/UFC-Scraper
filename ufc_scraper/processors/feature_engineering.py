@@ -1,7 +1,7 @@
 from typing import List, Any
 import numpy as np
 import pandas as pd
-import statsmodels.formula.api as smf
+# import statsmodels.formula.api as smf
 import statsmodels.api as sm
 
 from ufc_scraper.base_classes import DataFrameABC
