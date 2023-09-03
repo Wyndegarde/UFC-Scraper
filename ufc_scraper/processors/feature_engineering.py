@@ -1,6 +1,7 @@
 from typing import List, Any
 import numpy as np
 import pandas as pd
+
 # import statsmodels.formula.api as smf
 import statsmodels.api as sm
 
@@ -16,7 +17,7 @@ High level overview of the FeatureEngineeringProcessor class:
 2. Get a list of all unique the fighters in the dataframe.
 3. We have a list of relevant columns that we want to build regression models for.
     - Purpose is to create columns that can be used to predict future events.
-    - These columns are the average statistics for a fighter *going into* the respective fight.
+    - Columns are the average statistics for a fighter *going into* the respective fight
 4. To do so each column is selected, then 
 """
 

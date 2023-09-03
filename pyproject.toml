@@ -40,4 +40,6 @@ test = [
 [tool.setuptools]
 packages = ["ufc_scraper"]
 
+[tool.ruff]
+extend-ignore = ["E501"]
 

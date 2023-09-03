@@ -259,5 +259,15 @@ class DataProcessor(DataFrameABC):
             .str.replace(" ", "_")
             .str.lower()
         )
+        UFC_key_columns = ['date','red_fighter','blue_fighter','winner',
+                                   'red_sig_strike_percent', 'blue_sig_strike_percent',
+                                   'red_submission_attempts', 'blue_submission_attempts', 
+                                   'red_STANCE', 'blue_STANCE', 'red_total_strikes_percent',
+                                   'blue_total_strikes_percent', 'red_takedowns_percent',
+                                   'blue_takedowns_percent', 'Height_diff', 'Reach_diff', 
+                                   'red_age','blue_age','red_sig_strike_defence_percent',
+                                   'blue_sig_strike_defence_percent', 'red_takedowns_defence_percent',
+                                   'blue_takedowns_defence_percent']
+        self.object_df = self.object_df[UFC_key_columns]
         self.object_df.to_csv(PathSettings.CLEAN_DATA_CSV, index=False)
         # return self.object_df

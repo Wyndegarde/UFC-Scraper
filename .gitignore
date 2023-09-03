@@ -3,3 +3,4 @@ logs/
 .mypy_cache/
 .vscode/
 UFC_*
+*cache/
