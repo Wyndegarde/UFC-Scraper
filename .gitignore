@@ -2,5 +2,5 @@ __pycache__/
 logs/
 .mypy_cache/
 .vscode/
-UFC_*
+UFC_*.ipynb
 *cache/

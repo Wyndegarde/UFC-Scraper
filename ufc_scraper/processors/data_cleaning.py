@@ -198,12 +198,8 @@ class DataProcessor(DataFrameABC):
             1 - self.object_df["red_Sig. str. %"]
         )
 
-        self.object_df["red_takedowns_defence_percent"] = (
-            1 - self.object_df["blue_Td %"]
-        )
-        self.object_df["blue_takedowns_defence_percent"] = (
-            1 - self.object_df["red_Td %"]
-        )
+        self.object_df["red_td_defence_percent"] = 1 - self.object_df["blue_Td %"]
+        self.object_df["blue_td_defence_percent"] = 1 - self.object_df["red_Td %"]
 
     def _fill_na_values(self, height_reach):
         grouped_df = self.object_df.copy()
@@ -259,15 +255,31 @@ class DataProcessor(DataFrameABC):
             .str.replace(" ", "_")
             .str.lower()
         )
-        UFC_key_columns = ['date','red_fighter','blue_fighter','winner',
-                                   'red_sig_strike_percent', 'blue_sig_strike_percent',
-                                   'red_submission_attempts', 'blue_submission_attempts', 
-                                   'red_STANCE', 'blue_STANCE', 'red_total_strikes_percent',
-                                   'blue_total_strikes_percent', 'red_takedowns_percent',
-                                   'blue_takedowns_percent', 'Height_diff', 'Reach_diff', 
-                                   'red_age','blue_age','red_sig_strike_defence_percent',
-                                   'blue_sig_strike_defence_percent', 'red_takedowns_defence_percent',
-                                   'blue_takedowns_defence_percent']
+        # Using only the columns necessary for the model.
+        UFC_key_columns = [
+            "date",
+            "red_fighter",
+            "blue_fighter",
+            "winner",
+            "red_sig_str_percent",
+            "blue_sig_str_percent",
+            "red_sub_att",
+            "blue_sub_att",
+            "red_stance",
+            "blue_stance",
+            "red_total_str_percent",
+            "blue_total_str_percent",
+            "red_td_percent",
+            "blue_td_percent",
+            "height_diff",
+            "reach_diff",
+            "red_age",
+            "blue_age",
+            "red_sig_strike_defence_percent",
+            "blue_sig_strike_defence_percent",
+            "red_td_defence_percent",
+            "blue_td_defence_percent",
+        ]
         self.object_df = self.object_df[UFC_key_columns]
         self.object_df.to_csv(PathSettings.CLEAN_DATA_CSV, index=False)
         # return self.object_df

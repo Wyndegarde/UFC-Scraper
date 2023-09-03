@@ -1,11 +1,12 @@
 from typing import List, Any
 import numpy as np
 import pandas as pd
-
+from collections import defaultdict
 # import statsmodels.formula.api as smf
 import statsmodels.api as sm
 
 from ufc_scraper.base_classes import DataFrameABC
+from .fighter import Fighter
 
 """
 
@@ -34,7 +35,7 @@ class FeatureEngineeringProcessor(DataFrameABC):
         self.percent_stats = [
             column.replace("red_", "").replace("blue_", "")
             for column in self.object_df.columns
-            if "%" in column
+            if "percent" in column
         ]
 
     def _get_fighter_df(self, fighter_name: str) -> pd.DataFrame:
@@ -92,7 +93,15 @@ class FeatureEngineeringProcessor(DataFrameABC):
         XYs_only = regression_df.drop(self.percent_stats, axis=1)
 
         return XYs_only
+    
+    def _exp_build_reg_df(self):
+        regression_df = pd.DataFrame()
+        for fighter_name in self.fighters:
+            fighter = Fighter(self.object_df, fighter_name)
 
+            if len(fighter.fighter_df) >= 3:
+                ordered_stats = fighter.order_fighter_stats(self.percent_stats)
+                        
     def _fit_models(self):
         XYs_only = self._build_regression_df()
         # print(XYs_only.columns)
@@ -144,9 +153,8 @@ class FeatureEngineeringProcessor(DataFrameABC):
         self._create_new_col_names()
 
         for fighter in self.fighters:
-            fighter_df = self._get_fighter_df(
-                self.object_df, fighter
-            )  # Gets each fighter and orders their fights, earliest to most recent.
+            # Gets each fighter and orders their fights, earliest to most recent.
+            fighter_df = self._get_fighter_df(self.object_df, fighter)
 
             if len(fighter_df) > 1:
                 sig_strikes = []
