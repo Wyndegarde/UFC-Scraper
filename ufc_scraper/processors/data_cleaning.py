@@ -1,21 +1,22 @@
-"""
-This script is respoonsible for taking in the scraped data and ceaning it for use in the model.
-"""
-
 import re
 from datetime import datetime
 
 import numpy as np
 
-# import pandas as pd
+from pathlib import Path
+
 
 from ufc_scraper.base_classes import DataFrameABC
 from ufc_scraper.config import PathSettings
 
 
-class DataCleaningHandler(DataFrameABC):
-    def __init__(self, csv_path: str, allow_creation: bool = False) -> None:
+class DataProcessor(DataFrameABC):
+    def __init__(self, csv_path: Path, allow_creation: bool = False) -> None:
         super().__init__(csv_path, allow_creation)
+
+        if (not allow_creation) and (self.object_df.empty):
+            raise ValueError("DataFrame must not be empty")
+
         self.height_reach_cols = [
             column
             for column in self.object_df.columns
@@ -25,9 +26,10 @@ class DataCleaningHandler(DataFrameABC):
     def _create_height_reach_na_filler_df(self):
         reach_height_df = self.object_df.copy()
         reach_height_df.dropna(subset=self.height_reach_cols, inplace=True)
-
         self._apply_hr_conversions(reach_height_df)
-        grouping_by_weight_classes = reach_height_df.groupby("weight_class").mean()
+        grouping_by_weight_classes = reach_height_df.groupby("weight_class")[
+            self.height_reach_cols
+        ].mean()
 
         return grouping_by_weight_classes[self.height_reach_cols]
 
@@ -61,10 +63,10 @@ class DataCleaningHandler(DataFrameABC):
 
         return drop_columns
 
-    def get_dob_cols(self):
+    def _get_dob_cols(self):
         return [column for column in self.object_df.columns if "DOB" in column]
 
-    def get_attempt_landed_columns(self):
+    def _get_attempt_landed_columns(self):
         attempt_landed_columns = []
         for column in self.object_df.columns:
             type_condition = self.object_df[column].dtype == object
@@ -78,8 +80,8 @@ class DataCleaningHandler(DataFrameABC):
 
         return attempt_landed_columns
 
-    def handle_attempt_landed_columns(self):
-        attempt_landed_columns = self.get_attempt_landed_columns()
+    def _handle_attempt_landed_columns(self):
+        attempt_landed_columns = self._get_attempt_landed_columns()
         # This block converts all the columns from strings containing "x of y" to two columns corresponding to attempted and landed.
         for column in attempt_landed_columns:
             splitting_column = self.object_df[column].apply(lambda x: x.split(" of "))
@@ -99,8 +101,8 @@ class DataCleaningHandler(DataFrameABC):
 
             self.object_df.drop(columns=column, inplace=True)
 
-    # Convert both reach columns into cm
     def _convert_reach(self, reach):
+        # Convert both reach columns into cm
         if reach == "--":
             return np.nan
         clean_reach = float(reach.replace('"', ""))
@@ -124,7 +126,7 @@ class DataCleaningHandler(DataFrameABC):
             else:
                 dataframe[column] = dataframe[column].apply(self._convert_reach)
 
-    def handle_height_reach(self, height_reach_no_na_df):
+    def _handle_height_reach(self, height_reach_no_na_df):
         self._apply_hr_conversions(self.object_df)
 
         missing_indices = self.object_df.index[
@@ -163,7 +165,7 @@ class DataCleaningHandler(DataFrameABC):
             .astype(int)
         )
 
-    def format_date_columns(self):
+    def _format_date_columns(self):
         """
         Formats the date columns to datetime objects.
         """
@@ -182,7 +184,7 @@ class DataCleaningHandler(DataFrameABC):
                     lambda x: datetime.strptime(x, "%b %d, %Y")
                 )
 
-    def handle_percent_columns(self):
+    def _handle_percent_columns(self):
         percent_cols = [col for col in self.object_df.columns if "%" in col]
         for column in percent_cols:
             self.object_df[column] = (
@@ -196,14 +198,10 @@ class DataCleaningHandler(DataFrameABC):
             1 - self.object_df["red_Sig. str. %"]
         )
 
-        self.object_df["red_takedowns_defence_percent"] = (
-            1 - self.object_df["blue_Td %"]
-        )
-        self.object_df["blue_takedowns_defence_percent"] = (
-            1 - self.object_df["red_Td %"]
-        )
+        self.object_df["red_td_defence_percent"] = 1 - self.object_df["blue_Td %"]
+        self.object_df["blue_td_defence_percent"] = 1 - self.object_df["red_Td %"]
 
-    def fill_na_values(self, height_reach):
+    def _fill_na_values(self, height_reach):
         grouped_df = self.object_df.copy()
         grouped_df = grouped_df.dropna(subset=height_reach)
 
@@ -220,15 +218,28 @@ class DataCleaningHandler(DataFrameABC):
                         self.object_df.loc[i, "weight_class"], column
                     ]
 
-    def run_pipeline(self):
+    def clean_raw_data(self):
+        # Data source represent no attempts as "---".
         self.object_df.replace("---", "0", inplace=True)
-        self._clean_weight_class()
-        self.format_date_columns()
-        self.handle_attempt_landed_columns()
-        height_reach_no_na_df = self._create_height_reach_na_filler_df()
-        self.handle_height_reach(height_reach_no_na_df)
-        self.handle_percent_columns()
 
+        # Special bouts have things like TUF in the weight class. This removes that.
+        self._clean_weight_class()
+
+        # Simply converts the date columns to datetime objects.
+        self._format_date_columns()
+
+        # Data source has stats as "x of y". Split these into two cols.
+        self._handle_attempt_landed_columns()
+
+        # small subset of rows have missing values for height and reach.
+        # Drops these for accuracy.
+        height_reach_no_na_df = self._create_height_reach_na_filler_df()
+        self._handle_height_reach(height_reach_no_na_df)
+
+        # Converts cols with % in them to floats.
+        self._handle_percent_columns()
+
+        # Where missing, the stance is changed to the most common stance.
         self.object_df["blue_STANCE"].replace(np.nan, "Orthodox", inplace=True)
         self.object_df["red_STANCE"].replace(np.nan, "Orthodox", inplace=True)
 
@@ -238,4 +249,37 @@ class DataCleaningHandler(DataFrameABC):
         #     .value_counts()
         # )
 
+        # Clean the column names
+        self.object_df.columns = (
+            self.object_df.columns.str.replace(".", "")
+            .str.replace(" ", "_")
+            .str.lower()
+        )
+        # Using only the columns necessary for the model.
+        UFC_key_columns = [
+            "date",
+            "red_fighter",
+            "blue_fighter",
+            "winner",
+            "red_sig_str_percent",
+            "blue_sig_str_percent",
+            "red_sub_att",
+            "blue_sub_att",
+            "red_stance",
+            "blue_stance",
+            "red_total_str_percent",
+            "blue_total_str_percent",
+            "red_td_percent",
+            "blue_td_percent",
+            "height_diff",
+            "reach_diff",
+            "red_age",
+            "blue_age",
+            "red_sig_strike_defence_percent",
+            "blue_sig_strike_defence_percent",
+            "red_td_defence_percent",
+            "blue_td_defence_percent",
+        ]
+        self.object_df = self.object_df[UFC_key_columns]
         self.object_df.to_csv(PathSettings.CLEAN_DATA_CSV, index=False)
+        # return self.object_df

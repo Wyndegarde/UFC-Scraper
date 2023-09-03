@@ -31,12 +31,12 @@ class PathSettings:
 
     BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
-    RAW_DATA_CSV = os.path.join(BASE_DIR, "data", "raw_ufc_data.csv")
+    DATA_DIR: Path = BASE_DIR / "data"
 
-    EVENT_CACHE_CSV = os.path.join(BASE_DIR, "data", "event_cache.csv")
+    RAW_DATA_CSV: Path =  DATA_DIR /"raw_ufc_data.csv"
 
-    FIGHTER_PROFILE_CACHE_CSV = os.path.join(
-        BASE_DIR, "data", "fighter_profile_cache.csv"
-    )
+    EVENT_CACHE_JSON: Path = DATA_DIR / "event_cache.json"
 
-    CLEAN_DATA_CSV = os.path.join(BASE_DIR, "data", "clean_ufc_data.csv")
+    FIGHTER_PROFILE_CACHE_CSV: Path = DATA_DIR / "fighter_profile_cache.csv"
+
+    CLEAN_DATA_CSV: Path = DATA_DIR / "clean_ufc_data.csv"

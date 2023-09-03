@@ -1,4 +1,6 @@
 from abc import ABC
+from pathlib import Path
+
 import pandas as pd
 
 
@@ -7,8 +9,8 @@ class DataFrameABC(ABC):
     Abstract class to handle the loading and writing of dataframes.
     """
 
-    def __init__(self, csv_path: str, allow_creation: bool = False) -> None:
-        self.csv_path: str = csv_path
+    def __init__(self, csv_path: Path, allow_creation: bool = False) -> None:
+        self.csv_path: Path = csv_path
         self.allow_creation: bool = allow_creation
         self.object_df: pd.DataFrame = self._instantiate_df()
 

@@ -110,8 +110,8 @@ class BoutScraper(ScraperABC):
         """
         bout_stats: List[str] = []
         # Goes through the table containing the key information from each fight and stores the stats in a list.
-        for link in self.fight.find_all(class_="b-fight-details__table-text", limit=20):
-            entry: str = self._clean_text(link.get_text())
+        for stat in self.fight.find_all(class_="b-fight-details__table-text", limit=20):
+            entry: str = self._clean_text(stat.get_text())
             bout_stats.append(entry)
 
         bout_header: List[str] = self._get_fight_stats_header()
@@ -136,8 +136,11 @@ class BoutScraper(ScraperABC):
         """
         fighter_links: List[str] = []
         # Gets the links to each fighter's profile page and stores them in a list.
+        # for link in self.fight.find_all(
+        #     "a", class_="b-link b-link_style_black", limit=2
+        # ):
         for link in self.fight.find_all(
-            "a", class_="b-link b-link_style_black", limit=2
+            "a", class_="b-link b-fight-details__person-link", limit=2
         ):
             fighter_links.append(link.get("href"))
         return fighter_links
@@ -147,3 +150,37 @@ class BoutScraper(ScraperABC):
         fighter_links = self.get_fighter_links()
 
         return full_bout_details, fighter_links
+
+    def scrape_future_bouts(self):
+        ...
+
+    def extract_future_bout_stats(self):
+        names = [
+            self._clean_text(name.text)
+            for name in self.fight.find_all(
+                class_="b-fight-details__table-header-link"
+            )
+        ]
+        print(names)
+
+        names_dict = {'red_fighter': names[0], 'blue_fighter': names[1]}
+        stats = []
+        for stat in self.fight.find_all(class_="b-fight-details__table-text"):
+            # print(self._clean_text(stat.get_text()))
+            stats.append(self._clean_text(stat.get_text()))
+        # print(stats)
+        stats = stats[0:45]
+        stat_names = stats[::3]
+        red_blue_stat_names = []
+        for name in stat_names:
+            # Uses the isisntance to invoke the secondary functionality of this method.
+            red_blue_stat_names.extend(self._apply_rb_prefix(name))  #! Return to this.
+
+        # remove the stat names from the stats list.
+        del stats[::3]
+
+        # Creates a dict that properly maps the stat names to the stats for each corner.
+        all_stats = dict(zip(red_blue_stat_names, stats))
+        all_info = {**names_dict, **all_stats}
+        
+        return all_info
