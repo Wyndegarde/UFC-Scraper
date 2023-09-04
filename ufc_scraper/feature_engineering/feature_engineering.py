@@ -1,8 +1,7 @@
-from typing import List, Any
+from typing import List, DefaultDict
 import numpy as np
 import pandas as pd
-from collections import defaultdict
-# import statsmodels.formula.api as smf
+
 import statsmodels.api as sm
 
 from ufc_scraper.base_classes import DataFrameABC
@@ -26,82 +25,67 @@ High level overview of the FeatureEngineeringProcessor class:
 class FeatureEngineeringProcessor(DataFrameABC):
     def __init__(self, csv_path, allow_creation) -> None:
         super().__init__(csv_path, allow_creation)
+        # Returns a list of all unique fighters in the dataframe
         self.fighters = np.unique(
             np.concatenate(
                 [self.object_df["red_fighter"], self.object_df["blue_fighter"]],
                 axis=None,
             )
         )
-        self.percent_stats = [
+        self.percent_stats = self._get_percent_stats()
+
+    def _get_percent_stats(self) -> List[str]:
+        """
+        Method to extract the stats that are percentages (e.g. % of strikes landed).
+        These are the stats that will be relevant for predictions
+        but also required to build the models for filling missing values.
+
+        Returns:
+            List[str]: List of the column names which hold the percentage stat data.
+        """
+
+        # It's easier to work with if we remove the red_ and blue_ prefixes
+        percent_stats: List[str] = [
             column.replace("red_", "").replace("blue_", "")
             for column in self.object_df.columns
             if "percent" in column
         ]
-
-    def _get_fighter_df(self, fighter_name: str) -> pd.DataFrame:
-        return self.object_df[
-            (self.object_df["red_fighter"] == fighter_name)
-            | (self.object_df["blue_fighter"] == fighter_name)
-        ].sort_values(by="date", ascending=True)
-
-    def _populate_fighter_df(
-        self, stats_col, fighter_name, fighter_df: pd.DataFrame
-    ) -> List[Any]:
-        ordered_stats = []
-
-        for i in fighter_df.index:
-            if fighter_name in fighter_df.loc[i, "red_fighter"]:
-                ordered_stats.append(fighter_df.loc[i, "red_" + stats_col])
-            if fighter_name in fighter_df.loc[i, "blue_fighter"]:
-                ordered_stats.append(fighter_df.loc[i, "blue_" + stats_col])
-
-        return ordered_stats
-
-    def _populate_reg_df(self, ordered_stats, each_stat_df, stats_col):
-        lin_reg_df = pd.DataFrame(ordered_stats, columns=[stats_col])
-        lin_reg_df["X_" + stats_col] = (
-            lin_reg_df[stats_col].expanding(2).mean().shift(1)
-        )
-        lin_reg_df.loc[1, "X_" + stats_col] = lin_reg_df.loc[0, stats_col]
-        lin_reg_df["Y_" + stats_col] = lin_reg_df["X_" + stats_col].shift(1)
-        lin_reg_df = lin_reg_df.dropna()
-
-        each_stat_df = pd.concat(
-            [each_stat_df, lin_reg_df], axis=0
-        )  # Adds the rows of each fighter to the dataframe for that stat.
-        return each_stat_df
+        # Quick way to drop the duplicates - changes the order tho but not important here
+        return list(set(percent_stats))
 
     def _build_regression_df(self) -> pd.DataFrame:
-        regression_df = pd.DataFrame()
-        for column in self.percent_stats:
-            each_stat_df = pd.DataFrame(
-                columns=[column, "Y_" + column, "X_" + column]
-            )  # Builds a dataframe for each stat.
-            for fighter in self.fighters:
-                fighter_df = self._get_fighter_df(fighter)
+        """
+        Builds a dataframe that will be used to create the regression models.
+        Using the relevant stats, each stat will contain an X and Y column variant.
+        The X column will correspond to the average for that stat *before* a given fight.
+        The Y column will correspond to the average for that stat *after* a given fight.
+        So uses the overall average of the first x fights to predict the average of the first x+1 fights.
 
-                if len(fighter_df) >= 3:
-                    ordered_stats = self._populate_fighter_df(
-                        column, fighter, fighter_df
-                    )
-                    each_stat_df = self._populate_reg_df(
-                        ordered_stats, each_stat_df, column
-                    )
-            regression_df = pd.concat([regression_df, each_stat_df], axis=1)
-        regression_df = regression_df.reset_index(drop=True)
-
-        XYs_only = regression_df.drop(self.percent_stats, axis=1)
-
-        return XYs_only
-    
-    def _exp_build_reg_df(self):
+        Returns:
+            pd.DataFrame: DF containing the X & Y columns for each stat.
+        """
+        # DF to hold all the X and Y columns for each stat
         regression_df = pd.DataFrame()
         for fighter_name in self.fighters:
-            fighter = Fighter(self.object_df, fighter_name)
+            # Fighter object creates a version of the final dataframe for a single fighter.
+            fighter: Fighter = Fighter(self.object_df, fighter_name)
 
+            # Can only create a fighters regression df if they have had at least 3 fights.
             if len(fighter.fighter_df) >= 3:
-                ordered_stats = fighter.order_fighter_stats(self.percent_stats)
-                        
+                # Gets the fighters stats in chronological order (as a fighter can be in both the red and blue corner)
+                ordered_stats: DefaultDict[
+                    str, List[float]
+                ] = fighter.order_fighter_stats(self.percent_stats)
+
+                # Manipulate the ordered stats to create the X and Y columns for each stat.
+                fighter_lin_reg_df = fighter.create_fighter_reg_df(ordered_stats)
+
+                # Add the fighters X and Y columns to the overall regression df.
+                regression_df = pd.concat([regression_df, fighter_lin_reg_df], axis=0)
+
+        # return the final dataframe with reset index (so index 1 corresponds to row 1, not the row index of input df)
+        return regression_df.reset_index(drop=True)
+
     def _fit_models(self):
         XYs_only = self._build_regression_df()
         # print(XYs_only.columns)
@@ -278,3 +262,58 @@ def test_filled_values():
     Responsible for testing the filled values.
     """
     ...
+    # def _build_regression_df(self) -> pd.DataFrame:
+    #     regression_df = pd.DataFrame()
+    #     for column in self.percent_stats:
+    #         each_stat_df = pd.DataFrame(
+    #             columns=[column, "Y_" + column, "X_" + column]
+    #         )  # Builds a dataframe for each stat.
+    #         for fighter in self.fighters:
+    #             fighter_df = self._get_fighter_df(fighter)
+
+    #             if len(fighter_df) >= 3:
+    #                 ordered_stats = self._populate_fighter_df(
+    #                     column, fighter, fighter_df
+    #                 )
+    #                 each_stat_df = self._populate_reg_df(
+    #                     ordered_stats, each_stat_df, column
+    #                 )
+    #         regression_df = pd.concat([regression_df, each_stat_df], axis=1)
+    #     regression_df = regression_df.reset_index(drop=True)
+
+    #     XYs_only = regression_df.drop(self.percent_stats, axis=1)
+
+    # def _get_fighter_df(self, fighter_name: str) -> pd.DataFrame:
+    #     return self.object_df[
+    #         (self.object_df["red_fighter"] == fighter_name)
+    #         | (self.object_df["blue_fighter"] == fighter_name)
+    #     ].sort_values(by="date", ascending=True)
+
+    # def _populate_fighter_df(
+    #     self, stats_col, fighter_name, fighter_df: pd.DataFrame
+    # ) -> List[Any]:
+    #     ordered_stats = []
+
+    #     for i in fighter_df.index:
+    #         if fighter_name in fighter_df.loc[i, "red_fighter"]:
+    #             ordered_stats.append(fighter_df.loc[i, "red_" + stats_col])
+    #         if fighter_name in fighter_df.loc[i, "blue_fighter"]:
+    #             ordered_stats.append(fighter_df.loc[i, "blue_" + stats_col])
+
+    #     return ordered_stats
+
+    # def _populate_reg_df(self, ordered_stats, each_stat_df, stats_col):
+    #     lin_reg_df = pd.DataFrame(ordered_stats, columns=[stats_col])
+    #     lin_reg_df["X_" + stats_col] = (
+    #         lin_reg_df[stats_col].expanding(2).mean().shift(1)
+    #     )
+    #     lin_reg_df.loc[1, "X_" + stats_col] = lin_reg_df.loc[0, stats_col]
+    #     lin_reg_df["Y_" + stats_col] = lin_reg_df["X_" + stats_col].shift(1)
+    #     lin_reg_df = lin_reg_df.dropna()
+
+    #     each_stat_df = pd.concat(
+    #         [each_stat_df, lin_reg_df], axis=0
+    #     )  # Adds the rows of each fighter to the dataframe for that stat.
+    #     return each_stat_df
+
+    #  return XYs_only

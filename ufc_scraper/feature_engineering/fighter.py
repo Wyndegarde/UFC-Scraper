@@ -77,17 +77,24 @@ class Fighter:
             pd.DataFrame: a dataframe with the x and y columns for each stat for that fighter.
         """
         lin_reg_df = pd.DataFrame()
+        print(ordered_stats)
         for column, stats in ordered_stats.items():
             # Easier to manipulate stats using pandas
             lin_reg_df[column] = stats
 
             # Create lagged columns for each stat - easier to use
             x_col, y_col = f"X_{column}", f"Y_{column}"
-            # 
+            # See docstring for explanation of what this does. Creates the X column
             lin_reg_df[x_col] = lin_reg_df[column].expanding(2).mean().shift(1)
 
             #! Return to this as unsure what mypy is moaning about
             lin_reg_df.loc[1, x_col] = lin_reg_df.loc[0, column] # type: ignore
+            # Shifts again to create the stat after the fight in question
             lin_reg_df[y_col] = lin_reg_df[x_col].shift(1)
-            lin_reg_df = lin_reg_df.dropna()
+
+            # Could be more efficient to do this at the end but this is easier to read
+            lin_reg_df = lin_reg_df.drop(columns = [column], axis = 1)
+
+        # Drop the first row as there will be no Y value for it
+        lin_reg_df = lin_reg_df.dropna()
         return lin_reg_df
