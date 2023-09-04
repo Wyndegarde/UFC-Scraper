@@ -3,7 +3,7 @@ Module responsible for scraping the details for each event.
 """
 import json
 from pathlib import Path
-from typing import List, Set
+from typing import List
 
 from ufc_scraper.base_classes import ScraperABC
 
@@ -39,9 +39,9 @@ class HomepageScraper(ScraperABC):
             List[str]: List of event links that have not been scraped yet.
         """
 
-        cached_events: Set[str] = set(self.cache)
-        event_set: Set[str] = set(event_links)
-        filtered_event_links: List[str] = list(event_set - cached_events)
+        # Slightly slower than using sets, but this way it keeps the events in order.
+        filtered_event_links: List[str] = [event_link for event_link in event_links if event_link not in self.cache]
+         
 
         return filtered_event_links
 
