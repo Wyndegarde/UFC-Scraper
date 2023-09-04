@@ -66,7 +66,7 @@ class Fighter:
         df[new_col] = df[input_col].expanding(2).mean().shift(1)
 
         #! Return to this as unsure what mypy is moaning about
-        df.loc[1, new_col] = df.loc[0, input_col]  # type: ignore
+        df.loc[df.index[1], new_col] = df.loc[df.index[0], input_col]  # type: ignore
 
         return df
 
@@ -112,7 +112,7 @@ class Fighter:
         df: pd.DataFrame = pd.DataFrame(ordered_stats, index = self.fighter_df.index)
         col_mapper: Dict[str,str] = {column: column.replace("percent", "average") for column in df.columns}
 
-        for new_column, old_column in col_mapper.items():
+        for old_column, new_column in col_mapper.items():
             df = self._create_x_column(df, new_column, old_column)
 
         return df
