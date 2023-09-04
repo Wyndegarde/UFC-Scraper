@@ -1,26 +1,11 @@
-from typing import List, DefaultDict
+from typing import List, DefaultDict, Any, Dict
 import numpy as np
 import pandas as pd
 
-import statsmodels.api as sm
-
 from ufc_scraper.base_classes import DataFrameABC
+from ufc_scraper.config import PathSettings
 from ufc_scraper.models import RegressionModel
 from .fighter import Fighter
-
-"""
-
-RETURN TO THIS - I changed too much in previous steps to just refactor. 
-
-
-High level overview of the FeatureEngineeringProcessor class:
-1. Have a cleaned dataframe with all the fights in it.
-2. Get a list of all unique the fighters in the dataframe.
-3. We have a list of relevant columns that we want to build regression models for.
-    - Purpose is to create columns that can be used to predict future events.
-    - Columns are the average statistics for a fighter *going into* the respective fight
-4. To do so each column is selected, then 
-"""
 
 
 class FeatureEngineeringProcessor(DataFrameABC):
@@ -87,9 +72,18 @@ class FeatureEngineeringProcessor(DataFrameABC):
         # return the final dataframe with reset index (so index 1 corresponds to row 1, not the row index of input df)
         return regression_df.reset_index(drop=True)
 
-    def _fit_models(self):
+    def _fit_models(self) -> Dict[str, RegressionModel]:
+        """
+        Method to create the linear regression models that will predict what our missing values should be.
+
+
+        Returns:
+            RegressionModel: Custom Class that makes it a bit easier to work with the statsmodels package.
+        """
+        # DF containing the X and Y columns for each stat.
         XYs_only = self._build_regression_df()
-        # print(XYs_only.columns)
+
+        # All the models are created here.
         sig_strike_model = RegressionModel(
             XYs_only, "X_sig_str_percent", "Y_sig_str_percent"
         )
@@ -100,7 +94,7 @@ class FeatureEngineeringProcessor(DataFrameABC):
         takedowns_defence_model = RegressionModel(
             XYs_only, "X_td_defence_percent", "Y_td_defence_percent"
         )
-
+        # Store them in a dictionary for easy access.
         models = {
             "sig_strike": sig_strike_model,
             "takedowns": takedowns_model,
@@ -109,49 +103,98 @@ class FeatureEngineeringProcessor(DataFrameABC):
         }
 
         return models
-        # return sig_strike_model
 
-    def migration_placeholder(self):
-        models = self._fit_models()
+    def _populate_averages_cols(
+        self, fighter_stats_df: pd.DataFrame, fighter_name: str
+    ) -> None:
+        """
+        Takes the dataframe containing the average stats for a given fighter
+        and populates the main dataframe with the values.
+        This in effect adds a new column for each stat to the main dataframe,
+        where the values are the average stats for a given fighter *before* the bout in that row.
+
+        Args:
+            fighter_stats_df (pd.DataFrame): the dataframe containing the average stats for a given fighter
+            fighter_name (str): The name of the fighter.
+        """
+
+        for column in fighter_stats_df.columns:
+            # Because the fighter_stats_df is a subset of the main dataframe, the index is shared.
+            for i in fighter_stats_df.index:
+                if fighter_name in self.object_df.loc[i, "red_fighter"]:
+                    self.object_df.loc[i, "red_" + column] = fighter_stats_df.loc[
+                        i, column
+                    ]
+                elif fighter_name in self.object_df.loc[i, "blue_fighter"]:
+                    self.object_df.loc[i, "blue_" + column] = fighter_stats_df.loc[
+                        i, column
+                    ]
+
+    def fill_missing_value(
+        self, fighter_stats_df: pd.DataFrame, col_name: str, model: Any
+    ) -> pd.DataFrame:
+        """
+        Generates a prediction for a missing value and adds it to the fighters dataframe.
+        Uses the trained model for that stat.
+        Args:
+            fighter_stats_df (pd.DataFrame): The dataframe containing the average stats for a given fighter.
+            col_name (str): Name of the column to fill in.
+            model (Any): The trained model to use for the prediction.
+
+        Returns:
+            pd.DataFrame: The input df but with the missing value filled in.
+        """
+        # returns the predicted value.
+        prediction = model.predict(
+            fighter_stats_df.at[fighter_stats_df.index[1], col_name]
+        )
+        # Adds the predicted value to the dataframe.
+        fighter_stats_df.at[fighter_stats_df.index[0], col_name] = prediction
+        return fighter_stats_df
+
+    def run_feature_engineering(self) -> None:
+        """
+        Method which executes the feature engineering.
+        """
+        # Contains all trained models for filling in missing values.
+        models: Dict[str, RegressionModel] = self._fit_models()
 
         for fighter_name in self.fighters:
             # Gets each fighter and orders their fights, earliest to most recent.
             fighter = Fighter(self.object_df, fighter_name)
 
+            # Fighter needs to have had at least 2 fights in order to fill in missing values.
             if len(fighter.fighter_df) > 1:
-                all_stats = fighter.order_fighter_stats(self.percent_stats)
-                df: pd.DataFrame = fighter.setup_missing_val_df(all_stats)
-                sig_strike_pred = models["sig_strike"].predict(
-                    df.loc[df.index[1], "sig_str_average"]
+                # Gets the fighters stats in chronological order (as a fighter can be in both the red and blue corner)
+                all_stats: DefaultDict[str, List[float]] = fighter.order_fighter_stats(
+                    self.percent_stats
                 )
-                # return sig_strike_pred
-                takedowns_pred = models["takedowns"].predict(
-                    df.loc[df.index[1], "td_average"]
+                # Creates a dataframe containing the average stats for a given fighter.
+                # but with the stats for their first fight in the UFC missing.
+                fighter_stats_df: pd.DataFrame = fighter.setup_missing_val_df(all_stats)
+
+                # ? There's probably a better way to do this
+                # Using the trained model, predict what the stats for their first fight should be.
+                fighter_stats_df = self.fill_missing_value(
+                    fighter_stats_df, "sig_str_average", models["sig_strike"]
                 )
-                sig_strike_defence_pred = models["sig_strike_defence"].predict(
-                    df.loc[df.index[1], "sig_strike_defence_average"]
+                fighter_stats_df = self.fill_missing_value(
+                    fighter_stats_df, "td_average", models["takedowns"]
                 )
-                takedowns_defence_pred = models["takedowns_defence"].predict(
-                    df.loc[df.index[1], "td_defence_average"]
+                fighter_stats_df = self.fill_missing_value(
+                    fighter_stats_df,
+                    "sig_strike_defence_average",
+                    models["sig_strike_defence"],
+                )
+                fighter_stats_df = self.fill_missing_value(
+                    fighter_stats_df, "td_defence_average", models["takedowns_defence"]
                 )
 
-                df.loc[df.index[0], "sig_str_average"] = sig_strike_pred
-                df.loc[df.index[0], "td_average"] = takedowns_pred
-                df.loc[
-                    df.index[0], "sig_strike_defence_average"
-                ] = sig_strike_defence_pred
-                df.loc[df.index[0], "td_defence_average"] = takedowns_defence_pred
-                # print(self.percent_stats)
-                # print(df.head())
+                fighter_stats_df = fighter_stats_df.drop(
+                    columns=self.percent_stats, axis=1
+                )
+                # Add these averages to the main dataframe iteratively by fighter.
+                self._populate_averages_cols(fighter_stats_df, fighter_name)
 
-
-                df = df.drop(columns=self.percent_stats, axis = 1)
-
-                for column in df.columns:
-                    for i in df.index:
-                        if fighter_name in self.object_df.loc[i, "red_fighter"]:
-                            self.object_df.loc[i, "red_" + column] = df.loc[i, column]
-                        elif fighter_name in self.object_df.loc[i, "blue_fighter"]:
-                            self.object_df.loc[i, "blue_" + column] = df.loc[i, column]
-        return self.object_df.head()
-   
+        # Save the dataframe to a csv.
+        self.object_df.to_csv(PathSettings.TRAINING_DATA_CSV, index=False)

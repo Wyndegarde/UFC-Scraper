@@ -1,7 +1,6 @@
 """
 Script to store all the configuration variables
 """
-import os
 from pathlib import Path
 import logging
 
@@ -26,7 +25,6 @@ class Config:
 class PathSettings:
     """
     This class will hold all the paths to the data files.
-    # TODO: Investigate whether the os.join should be replaced with a Pathlib equivalent.
     """
 
     BASE_DIR: Path = Path(__file__).resolve().parent.parent
@@ -40,3 +38,5 @@ class PathSettings:
     FIGHTER_PROFILE_CACHE_CSV: Path = DATA_DIR / "fighter_profile_cache.csv"
 
     CLEAN_DATA_CSV: Path = DATA_DIR / "clean_ufc_data.csv"
+
+    TRAINING_DATA_CSV: Path = DATA_DIR / "training_data.csv"
