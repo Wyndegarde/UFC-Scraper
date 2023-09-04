@@ -5,6 +5,7 @@ import pandas as pd
 import statsmodels.api as sm
 
 from ufc_scraper.base_classes import DataFrameABC
+from ufc_scraper.models import RegressionModel
 from .fighter import Fighter
 
 """
@@ -90,19 +91,18 @@ class FeatureEngineeringProcessor(DataFrameABC):
         XYs_only = self._build_regression_df()
         # print(XYs_only.columns)
         print(self.object_df.columns)
-
-        sig_strike_model = sm.OLS(
-            XYs_only["Y_sig_str_%"], sm.add_constant(XYs_only["X_sig_str_%"])
-        ).fit()
-        takedowns_model = sm.OLS(
-            XYs_only["Y_td_%"], sm.add_constant(XYs_only["X_td_%"])
-        ).fit()
-        sig_strike_defence_model = sm.OLS(
-            XYs_only["Y_sig_str_def_%"], sm.add_constant(XYs_only["X_sig_str_def_%"])
-        ).fit()
-        takedowns_defence_model = sm.OLS(
-            XYs_only["Y_td_def_%"], sm.add_constant(XYs_only["X_td_def_%"])
-        ).fit()
+        sig_strike_model = RegressionModel(
+            XYs_only, "X_sig_strike_percent", "Y_sig_strike_percent"
+        )
+        takedowns_model = RegressionModel(
+            XYs_only, "X_takedowns_percent", "Y_takedowns_percent"
+        )
+        sig_strike_defence_model = RegressionModel(
+            XYs_only, "X_sig_strike_defence_percent", "Y_sig_strike_defence_percent"
+        )
+        takedowns_defence_model = RegressionModel(
+            XYs_only, "X_takedowns_defence_percent", "Y_takedowns_defence_percent"
+        )
 
         models = {
             "sig_strike": sig_strike_model,
@@ -138,47 +138,11 @@ class FeatureEngineeringProcessor(DataFrameABC):
 
         for fighter in self.fighters:
             # Gets each fighter and orders their fights, earliest to most recent.
-            fighter_df = self._get_fighter_df(self.object_df, fighter)
+            fighter = Fighter(self.object_df, fighter)
 
-            if len(fighter_df) > 1:
-                sig_strikes = []
-                takedowns = []
-                sig_strike_defence = []
-                takedown_defence = []
-
-                for i in fighter_df.index:
-                    if fighter in fighter_df.loc[i, "red_fighter"]:
-                        sig_strikes.append(fighter_df.loc[i, "red_sig_strike_percent"])
-                        takedowns.append(fighter_df.loc[i, "red_takedowns_percent"])
-                        sig_strike_defence.append(
-                            fighter_df.loc[i, "red_sig_strike_defence_percent"]
-                        )
-                        takedown_defence.append(
-                            fighter_df.loc[i, "red_takedowns_defence_percent"]
-                        )
-
-                    if fighter in fighter_df.loc[i, "blue_fighter"]:
-                        sig_strikes.append(fighter_df.loc[i, "blue_sig_strike_percent"])
-                        takedowns.append(fighter_df.loc[i, "blue_takedowns_percent"])
-                        sig_strike_defence.append(
-                            fighter_df.loc[i, "blue_sig_strike_defence_percent"]
-                        )
-                        takedown_defence.append(
-                            fighter_df.loc[i, "blue_takedowns_defence_percent"]
-                        )
-
-                dic = {
-                    "sig_strike": sig_strikes,
-                    "takedowns": takedowns,
-                    "sig_strike_defence": sig_strike_defence,
-                    "takedowns_defence": takedown_defence,
-                }
-                df = pd.DataFrame(dic, index=fighter_df.index)
-
-                for column in df.columns:
-                    column_name = column + "_average"
-                    df[column_name] = df[column].expanding(2).mean().shift(1)
-                    df.loc[df.index[1], column_name] = df.loc[df.index[0], column]
+            if len(fighter.fighter_df) > 1:
+                all_stats = fighter.order_fighter_stats(self.percent_stats)
+                df: pd.DataFrame = fighter.setup_missing_val_df(all_stats)
 
                 predict_sig_strikes = sig_strike_model.predict(
                     exog=dict(
@@ -215,14 +179,7 @@ class FeatureEngineeringProcessor(DataFrameABC):
                     df.index[0], "takedowns_defence_average"
                 ] = predict_takedown_defence[0]
 
-                df = df.drop(
-                    columns=[
-                        "sig_strike",
-                        "takedowns",
-                        "sig_strike_defence",
-                        "takedowns_defence",
-                    ]
-                )
+                df = df.drop(columns=[self.percent_stats])
 
                 for column in df.columns:
                     for i in df.index:

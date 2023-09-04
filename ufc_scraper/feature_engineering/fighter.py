@@ -1,4 +1,4 @@
-from typing import List, DefaultDict
+from typing import List, DefaultDict, Dict
 from collections import defaultdict
 import pandas as pd
 
@@ -8,6 +8,7 @@ class Fighter:
     Class responsible for working with a single fighter and the stats associated with them.
     Used to create a dataframe containing data which will be used to create a regression model to fill in missing data.
     """
+
     def __init__(self, full_ufc_df: pd.DataFrame, fighter_name: str) -> None:
         self.full_ufc_df = full_ufc_df
         self.fighter_name = fighter_name
@@ -58,6 +59,17 @@ class Fighter:
         ), "There should be the same number of extracted stats as specified stats."
         return ordered_fighter_stats
 
+    def _create_x_column(
+        self, df: pd.DataFrame, new_col: str, input_col: str
+    ) -> pd.DataFrame:
+        # See docstring for explanation of what this does. Creates the X column
+        df[new_col] = df[input_col].expanding(2).mean().shift(1)
+
+        #! Return to this as unsure what mypy is moaning about
+        df.loc[1, new_col] = df.loc[0, input_col]  # type: ignore
+
+        return df
+
     def create_fighter_reg_df(
         self, ordered_stats: DefaultDict[str, List[float]]
     ) -> pd.DataFrame:
@@ -68,7 +80,7 @@ class Fighter:
         This in effect calculates the average of that stat for the fighter at the point they were going into their next fight.
         so if a fighter had 10 fights, the 10th row will be the average of the previous 9 fights.
         This aspect is handled by the shift(1) method which shifts the column down by 1 row.
-        The Y column is in effect the average *after* the fight. 
+        The Y column is in effect the average *after* the fight.
         So that we are predicting what the average will be after the fight using the average going into the fight.
         Args:
             ordered_stats (DefaultDict[str, List[float]]): A dictionary holding all the available stats for a fighter.
@@ -77,24 +89,41 @@ class Fighter:
             pd.DataFrame: a dataframe with the x and y columns for each stat for that fighter.
         """
         lin_reg_df = pd.DataFrame()
-        print(ordered_stats)
         for column, stats in ordered_stats.items():
             # Easier to manipulate stats using pandas
             lin_reg_df[column] = stats
 
             # Create lagged columns for each stat - easier to use
             x_col, y_col = f"X_{column}", f"Y_{column}"
-            # See docstring for explanation of what this does. Creates the X column
-            lin_reg_df[x_col] = lin_reg_df[column].expanding(2).mean().shift(1)
 
-            #! Return to this as unsure what mypy is moaning about
-            lin_reg_df.loc[1, x_col] = lin_reg_df.loc[0, column] # type: ignore
+            lin_reg_df = self._create_x_column(lin_reg_df, x_col, column)
+
             # Shifts again to create the stat after the fight in question
             lin_reg_df[y_col] = lin_reg_df[x_col].shift(1)
 
             # Could be more efficient to do this at the end but this is easier to read
-            lin_reg_df = lin_reg_df.drop(columns = [column], axis = 1)
+            lin_reg_df = lin_reg_df.drop(columns=[column], axis=1)
 
         # Drop the first row as there will be no Y value for it
         lin_reg_df = lin_reg_df.dropna()
         return lin_reg_df
+
+    def setup_missing_val_df(self, ordered_stats: DefaultDict[str, List[float]]) -> pd.DataFrame:
+        df: pd.DataFrame = pd.DataFrame(ordered_stats, index = self.fighter_df.index)
+        col_mapper: Dict[str,str] = {column: column.replace("percent", "average") for column in df.columns}
+
+        for new_column, old_column in col_mapper.items():
+            df = self._create_x_column(df, new_column, old_column)
+
+        return df
+        
+
+
+
+
+
+
+            # # See docstring for explanation of what this does. Creates the X column
+            # lin_reg_df[x_col] = lin_reg_df[column].expanding(2).mean().shift(1)
+            # #! Return to this as unsure what mypy is moaning about
+            # lin_reg_df.loc[1, x_col] = lin_reg_df.loc[0, column]  # type: ignore
