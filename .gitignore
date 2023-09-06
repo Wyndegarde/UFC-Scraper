@@ -4,3 +4,4 @@ logs/
 .vscode/
 UFC_*.ipynb
 *cache/
+old/

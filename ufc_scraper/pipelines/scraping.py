@@ -1,6 +1,5 @@
 from typing import Dict, Any, List
-
-from rich.console import Console
+from pathlib import Path
 from rich.progress import Progress, TimeElapsedColumn
 
 import pandas as pd
@@ -12,9 +11,8 @@ from ufc_scraper.scrapers import (
     FighterScraper,
     CardScraper,
 )
-from ufc_scraper.config import PathSettings
-
-console = Console()
+from ufc_scraper.config import PathSettings, console
+# console = Console()
 
 
 class ScrapingPipeline:
@@ -138,3 +136,41 @@ class ScrapingPipeline:
             if (index % 10 == 0) or (total_events - index <= 10):
                 homepage.write_cache()
                 raw_data_processor.write_csv()
+
+    def _scrape_future_fight(self):
+        ...
+    def scrape_next_event(self):
+        existing_future_event = Path(PathSettings.NEXT_EVENT_CSV)
+        existing_future_event.unlink(missing_ok=True)
+        next_event_processor = DataProcessor(
+            csv_path=PathSettings.NEXT_EVENT_CSV, allow_creation=True
+        )
+
+        homepage = HomepageScraper(
+            url="http://www.ufcstats.com/statistics/events/completed",
+            cache_file_path=PathSettings.EVENT_CACHE_JSON,
+        )
+        # Returns the link to the next event - different tag to previous events.
+        next_event_link = homepage._get_next_event()
+
+        fight_card = CardScraper(next_event_link)
+        event_name, date, location, fight_links = fight_card.scrape_url()
+
+        fight_links = list(set(fight_links))
+        self._display_event_details(event_name, date, location, fight_links)
+        all_fights = []
+        for fight in fight_links:
+            bout = BoutScraper(url=fight, date=date, location=location)
+            fighter_links = bout.get_fighter_links()
+            fighter_profiles = self._scrape_fighter_profiles(fighter_links)
+            
+            all_info = bout.extract_future_bout_stats()
+
+            full_fight_details = {**all_info, **fighter_profiles}
+            full_fight_details_df = pd.DataFrame.from_dict(
+                full_fight_details, orient="index"
+            ).T
+            next_event_processor.add_row(full_fight_details_df)
+
+        next_event_processor.write_csv()
+        return all_fights
