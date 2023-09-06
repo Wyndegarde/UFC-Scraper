@@ -3,8 +3,10 @@ Script to store all the configuration variables
 """
 from pathlib import Path
 import logging
+from rich.console import Console
 
 
+console = Console()
 class Config:
     """
     This class will hold all the configuration variables.
@@ -40,3 +42,5 @@ class PathSettings:
     CLEAN_DATA_CSV: Path = DATA_DIR / "clean_ufc_data.csv"
 
     TRAINING_DATA_CSV: Path = DATA_DIR / "training_data.csv"
+
+    NEXT_EVENT_CSV: Path = DATA_DIR / "next_event.csv"
