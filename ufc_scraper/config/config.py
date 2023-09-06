@@ -31,6 +31,8 @@ class PathSettings:
 
     BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
+    TEST_DIR: Path = BASE_DIR.parent / "tests"
+
     DATA_DIR: Path = BASE_DIR / "data"
 
     RAW_DATA_CSV: Path =  DATA_DIR /"raw_ufc_data.csv"
@@ -44,3 +46,7 @@ class PathSettings:
     TRAINING_DATA_CSV: Path = DATA_DIR / "training_data.csv"
 
     NEXT_EVENT_CSV: Path = DATA_DIR / "next_event.csv"
+    
+    TEST_PAGES: Path = TEST_DIR / "html_pages"
+
+    TEST_FIGHTER_PROFILE: Path = TEST_PAGES / "fighter_profile.html"
