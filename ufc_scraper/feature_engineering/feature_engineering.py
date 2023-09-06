@@ -8,7 +8,7 @@ from ufc_scraper.models import RegressionModel
 from .fighter import Fighter
 
 
-class FeatureEngineeringProcessor(DataFrameABC):
+class FeatureEngineering(DataFrameABC):
     def __init__(self, csv_path, allow_creation) -> None:
         super().__init__(csv_path, allow_creation)
         # Returns a list of all unique fighters in the dataframe

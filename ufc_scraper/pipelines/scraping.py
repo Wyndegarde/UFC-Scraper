@@ -4,7 +4,7 @@ from rich.progress import Progress, TimeElapsedColumn
 
 import pandas as pd
 
-from ufc_scraper.processors import DataProcessor
+from ufc_scraper.data_cleaning import DataProcessor
 from ufc_scraper.scrapers import (
     HomepageScraper,
     BoutScraper,

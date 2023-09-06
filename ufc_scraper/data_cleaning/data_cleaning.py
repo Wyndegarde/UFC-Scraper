@@ -10,7 +10,7 @@ from ufc_scraper.base_classes import DataFrameABC
 from ufc_scraper.config import PathSettings
 
 
-class DataProcessor(DataFrameABC):
+class DataCleaner(DataFrameABC):
     def __init__(self, csv_path: Path, allow_creation: bool = False) -> None:
         super().__init__(csv_path, allow_creation)
 
