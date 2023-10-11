@@ -81,7 +81,8 @@ class ScrapingPipeline:
         full_fight_details_df = pd.DataFrame.from_dict(
             full_fight_details, orient="index"
         ).T
-
+        
+        # Adds the row to the dataframe containing all fights.
         raw_data_processor.add_row(full_fight_details_df)
 
     def run_pipeline(self) -> Any:
@@ -137,11 +138,12 @@ class ScrapingPipeline:
                 homepage.write_cache()
                 raw_data_processor.write_csv()
 
-    def _scrape_future_fight(self):
-        ...
-    def scrape_next_event(self):
+    def scrape_next_event(self) -> None:
+        # Removes the existing next event (if it exists)
         existing_future_event = Path(PathSettings.NEXT_EVENT_CSV)
         existing_future_event.unlink(missing_ok=True)
+
+        # Creates the next event object for cleaning and writing the csv
         next_event_processor = DataCleaner(
             csv_path=PathSettings.NEXT_EVENT_CSV, allow_creation=True
         )
@@ -158,7 +160,7 @@ class ScrapingPipeline:
 
         fight_links = list(set(fight_links))
         self._display_event_details(event_name, date, location, fight_links)
-        all_fights = []
+        
         for fight in fight_links:
             bout = BoutScraper(url=fight, date=date, location=location)
             fighter_links = bout.get_fighter_links()
@@ -173,4 +175,3 @@ class ScrapingPipeline:
             next_event_processor.add_row(full_fight_details_df)
 
         next_event_processor.write_csv()
-        return all_fights
