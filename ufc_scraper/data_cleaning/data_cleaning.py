@@ -293,6 +293,7 @@ class DataCleaner(DataFrameABC):
         # return self.object_df
 
     def clean_next_event(self):
+        # Lazy way of doing this rn. cba finding more elegant solution.
         next_event_key_columns = [
             "date",
             "location",
@@ -320,10 +321,34 @@ class DataCleaner(DataFrameABC):
             "blue_record",
         ]
 
+        column_mapper = {
+            "red_Striking Accuracy": "red_sig_str_percent",
+            "blue_Striking Accuracy": "blue_sig_str_percent",
+            "red_Defense": "red_sig_strike_defence_percent",
+            "blue_Defense": "blue_sig_strike_defence_percent",
+            "red_Takedown Accuracy": "red_td_percent",
+            "blue_Takedown Accuracy": "blue_td_percent",
+            "red_Takedown Defense": "red_td_defence_percent",
+            "blue_Takedown Defense": "blue_td_defence_percent",
+            "red_Stance": "red_stance",
+            "blue_Stance": "blue_stance",
+        }
+        self.height_reach_cols = [
+            column
+            for column in self.object_df.columns
+            if "reach" in column.lower() or "height" in column.lower()
+        ]
         self.object_df = self.object_df[next_event_key_columns]
+        self.object_df.rename(columns=column_mapper, inplace=True)
+        percent_cols = [col for col in self.object_df.columns if "percent" in col]
+        for column in percent_cols:
+            self.object_df[column] = (
+                self.object_df[column].str.strip("%").astype("int") / 100
+            )
         # Where missing, the stance is changed to the most common stance.
-        self.object_df["blue_Stance"].replace(np.nan, "Orthodox", inplace=True)
-        self.object_df["red_Stance"].replace(np.nan, "Orthodox", inplace=True)
+        self.object_df["blue_stance"].replace(np.nan, "Orthodox", inplace=True)
+        self.object_df["red_stance"].replace(np.nan, "Orthodox", inplace=True)
         self._clean_weight_class()
         self._format_date_columns()
         self._apply_hr_conversions(self.object_df)
+        self._create_height_reach_diff_columns()
