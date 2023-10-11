@@ -4,7 +4,7 @@ from rich.progress import Progress, TimeElapsedColumn
 
 import pandas as pd
 
-from ufc_scraper.data_cleaning import DataProcessor
+from ufc_scraper.data_cleaning import DataCleaner
 from ufc_scraper.scrapers import (
     HomepageScraper,
     BoutScraper,
@@ -66,7 +66,7 @@ class ScrapingPipeline:
         )
 
     def _scrape_fight(
-        self, fight: str, date: str, location: str, raw_data_processor: DataProcessor
+        self, fight: str, date: str, location: str, raw_data_processor: DataCleaner
     ) -> None:
         bout: BoutScraper = BoutScraper(url=fight, date=date, location=location)
         full_bout_details, fighter_links = bout.scrape_url()
@@ -93,7 +93,7 @@ class ScrapingPipeline:
         """
 
         # Instantiate all data processors required for scraping.
-        raw_data_processor = DataProcessor(
+        raw_data_processor = DataCleaner(
             csv_path=PathSettings.RAW_DATA_CSV, allow_creation=True
         )
 
@@ -142,7 +142,7 @@ class ScrapingPipeline:
     def scrape_next_event(self):
         existing_future_event = Path(PathSettings.NEXT_EVENT_CSV)
         existing_future_event.unlink(missing_ok=True)
-        next_event_processor = DataProcessor(
+        next_event_processor = DataCleaner(
             csv_path=PathSettings.NEXT_EVENT_CSV, allow_creation=True
         )
 

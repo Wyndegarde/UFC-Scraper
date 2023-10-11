@@ -2,16 +2,14 @@
 
 FROM python:3.10-slim-buster
 
-# COPY ./requirements.txt /ufc_scraper/requirements.txt
-COPY . /ufc_scraper/
+COPY . /ufc_project/
 
 RUN pip install --upgrade pip
 
-RUN pip install -r /ufc_scraper/requirements.txt
+RUN pip install -r /ufc_project/requirements.txt
 
 RUN apt-get -y clean
 
+WORKDIR /ufc_project
 
-WORKDIR /ufc_scraper
-
-# CMD ["python", "main.py"]
+CMD ["python", "main.py"]
