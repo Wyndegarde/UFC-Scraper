@@ -121,10 +121,22 @@ class DataCleaner(DataFrameABC):
 
     def _apply_hr_conversions(self, dataframe):
         for column in self.height_reach_cols:
-            if "Height" in column:
+            if "height" in column.lower():
                 dataframe[column] = dataframe[column].apply(self._convert_height)
             else:
                 dataframe[column] = dataframe[column].apply(self._convert_reach)
+
+    def _create_height_reach_diff_columns(self):
+
+        height_columns = [self.height_reach_cols[0], self.height_reach_cols[2]]
+        reach_columns = [self.height_reach_cols[1], self.height_reach_cols[3]]
+
+        self.object_df["Height_diff"] = (
+            self.object_df[height_columns[0]] - self.object_df[height_columns[1]]
+        )  # Red height minus Blue height. So positve value suggests red taller, negative implies red shorter.
+        self.object_df["Reach_diff"] = (
+            self.object_df[reach_columns[0]] - self.object_df[reach_columns[1]]
+        )  # Same as for height.
 
     def _handle_height_reach(self, height_reach_no_na_df):
         self._apply_hr_conversions(self.object_df)
@@ -140,16 +152,9 @@ class DataCleaner(DataFrameABC):
                         self.object_df.loc[i, "weight_class"], column
                     ]
 
-        height_columns = [self.height_reach_cols[0], self.height_reach_cols[2]]
-        reach_columns = [self.height_reach_cols[1], self.height_reach_cols[3]]
+        self._create_height_reach_diff_columns()
 
-        self.object_df["Height_diff"] = (
-            self.object_df[height_columns[0]] - self.object_df[height_columns[1]]
-        )  # Red height minus Blue height. So positve value suggests red taller, negative implies red shorter.
-        self.object_df["Reach_diff"] = (
-            self.object_df[reach_columns[0]] - self.object_df[reach_columns[1]]
-        )  # Same as for height.
-
+    def _create_age_columns(self):
         self.object_df["red_age"] = (
             self.object_df["date"]
             .sub(self.object_df["red_DOB"])
@@ -236,6 +241,9 @@ class DataCleaner(DataFrameABC):
         height_reach_no_na_df = self._create_height_reach_na_filler_df()
         self._handle_height_reach(height_reach_no_na_df)
 
+        # Creates columns for the age of each fighter.
+        self._create_age_columns()
+
         # Converts cols with % in them to floats.
         self._handle_percent_columns()
 
@@ -283,3 +291,39 @@ class DataCleaner(DataFrameABC):
         self.object_df = self.object_df[UFC_key_columns]
         self.object_df.to_csv(PathSettings.CLEAN_DATA_CSV, index=False)
         # return self.object_df
+
+    def clean_next_event(self):
+        next_event_key_columns = [
+            "date",
+            "location",
+            "red_fighter",
+            "blue_fighter",
+            "weight_class",
+            "title_bout",
+            "red_Striking Accuracy",
+            "blue_Striking Accuracy",
+            "red_Defense",
+            "blue_Defense",
+            "red_Takedown Accuracy",
+            "blue_Takedown Accuracy",
+            "red_Takedown Defense",
+            "blue_Takedown Defense",
+            "red_Stance",
+            "blue_Stance",
+            "red_DOB",
+            "blue_DOB",
+            "red_Height",
+            "blue_Height",
+            "red_Reach",
+            "blue_Reach",
+            "red_record",
+            "blue_record",
+        ]
+
+        self.object_df = self.object_df[next_event_key_columns]
+        # Where missing, the stance is changed to the most common stance.
+        self.object_df["blue_Stance"].replace(np.nan, "Orthodox", inplace=True)
+        self.object_df["red_Stance"].replace(np.nan, "Orthodox", inplace=True)
+        self._clean_weight_class()
+        self._format_date_columns()
+        self._apply_hr_conversions(self.object_df)

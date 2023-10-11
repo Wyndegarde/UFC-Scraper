@@ -81,7 +81,7 @@ class ScrapingPipeline:
         full_fight_details_df = pd.DataFrame.from_dict(
             full_fight_details, orient="index"
         ).T
-        
+
         # Adds the row to the dataframe containing all fights.
         raw_data_processor.add_row(full_fight_details_df)
 
@@ -174,4 +174,5 @@ class ScrapingPipeline:
             ).T
             next_event_processor.add_row(full_fight_details_df)
 
+        next_event_processor.clean_next_event()
         next_event_processor.write_csv()
