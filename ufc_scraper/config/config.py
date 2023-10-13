@@ -46,6 +46,8 @@ class PathSettings:
     TRAINING_DATA_CSV: Path = DATA_DIR / "training_data.csv"
 
     NEXT_EVENT_CSV: Path = DATA_DIR / "next_event.csv"
+
+    MODEL_WEIGHTS: Path = DATA_DIR / "model_weights.joblib"
     
     TEST_PAGES: Path = TEST_DIR / "html_pages"
 

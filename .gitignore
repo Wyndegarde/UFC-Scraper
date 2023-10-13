@@ -7,3 +7,4 @@ UFC_*.ipynb
 old/
 playground.ipynb
 *.ipynb
+*.joblib

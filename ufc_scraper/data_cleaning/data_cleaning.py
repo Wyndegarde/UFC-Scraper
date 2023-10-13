@@ -127,7 +127,6 @@ class DataCleaner(DataFrameABC):
                 dataframe[column] = dataframe[column].apply(self._convert_reach)
 
     def _create_height_reach_diff_columns(self):
-
         height_columns = [self.height_reach_cols[0], self.height_reach_cols[2]]
         reach_columns = [self.height_reach_cols[1], self.height_reach_cols[3]]
 
@@ -322,16 +321,17 @@ class DataCleaner(DataFrameABC):
         ]
 
         column_mapper = {
-            "red_Striking Accuracy": "red_sig_str_percent",
-            "blue_Striking Accuracy": "blue_sig_str_percent",
-            "red_Defense": "red_sig_strike_defence_percent",
-            "blue_Defense": "blue_sig_strike_defence_percent",
-            "red_Takedown Accuracy": "red_td_percent",
-            "blue_Takedown Accuracy": "blue_td_percent",
-            "red_Takedown Defense": "red_td_defence_percent",
-            "blue_Takedown Defense": "blue_td_defence_percent",
+            "red_Striking Accuracy": "red_sig_str_average",
+            "blue_Striking Accuracy": "blue_sig_str_average",
+            "red_Defense": "red_sig_strike_defence_average",
+            "blue_Defense": "blue_sig_strike_defence_average",
+            "red_Takedown Accuracy": "red_td_average",
+            "blue_Takedown Accuracy": "blue_td_average",
+            "red_Takedown Defense": "red_td_defence_average",
+            "blue_Takedown Defense": "blue_td_defence_average",
             "red_Stance": "red_stance",
             "blue_Stance": "blue_stance",
+
         }
         self.height_reach_cols = [
             column
@@ -340,7 +340,7 @@ class DataCleaner(DataFrameABC):
         ]
         self.object_df = self.object_df[next_event_key_columns]
         self.object_df.rename(columns=column_mapper, inplace=True)
-        percent_cols = [col for col in self.object_df.columns if "percent" in col]
+        percent_cols = [col for col in self.object_df.columns if "average" in col]
         for column in percent_cols:
             self.object_df[column] = (
                 self.object_df[column].str.strip("%").astype("int") / 100

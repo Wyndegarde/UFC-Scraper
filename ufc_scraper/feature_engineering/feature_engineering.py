@@ -4,7 +4,7 @@ import pandas as pd
 
 from ufc_scraper.base_classes import DataFrameABC
 from ufc_scraper.config import PathSettings
-from ufc_scraper.models import RegressionModel
+from .regression import RegressionModel
 from .fighter import Fighter
 
 
