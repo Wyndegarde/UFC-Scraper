@@ -7,7 +7,7 @@ the ABC contains all methods that are common to all scrapers.
 from typing import Dict, Union, List, Optional
 from abc import ABC, abstractmethod
 
-import requests
+import requests  # type: ignore
 from bs4 import BeautifulSoup
 
 
