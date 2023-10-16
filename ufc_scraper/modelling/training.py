@@ -7,7 +7,7 @@ Same with Inference.py
 from joblib import dump
 from pathlib import Path
 
-# import mlflow
+import mlflow
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
@@ -65,7 +65,8 @@ class Training(DataFrameABC):
 
     def train_model(self):
         self._prepare_data()
-        # mlflow.set_experiment("UFC")
+        # mlflow.set_tracking_uri("http://localhost:5000")
+        mlflow.sklearn.autolog()
         print(self.object_df.columns)
         X = self.object_df.drop(columns=["outcome"], axis=1)
         y = self.object_df["outcome"]
