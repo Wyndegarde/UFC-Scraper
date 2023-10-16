@@ -4,6 +4,7 @@ Very basic just to have some form of output but nothing that works with any degr
 Same with Inference.py
 
 """
+from datetime import datetime
 from joblib import dump
 from pathlib import Path
 
@@ -20,6 +21,14 @@ from ufc_scraper.config import PathSettings
 class Training(DataFrameABC):
     def __init__(self, csv_path: Path, allow_creation: bool = False) -> None:
         super().__init__(csv_path, allow_creation)
+        self.experiment = self._setup_experiment()
+
+    def _setup_experiment(self):
+        experiment = mlflow.get_experiment_by_name("UFC_rand_forest")
+        if experiment is None:
+            mlflow.create_experiment("UFC_rand_forest")
+
+        return experiment
 
     def _prepare_data(self):
         self.object_df = self.object_df[
@@ -65,20 +74,23 @@ class Training(DataFrameABC):
 
     def train_model(self):
         self._prepare_data()
-        # mlflow.set_tracking_uri("http://localhost:5000")
-        mlflow.sklearn.autolog()
-        print(self.object_df.columns)
-        X = self.object_df.drop(columns=["outcome"], axis=1)
-        y = self.object_df["outcome"]
+        with mlflow.start_run(
+            run_name=f"run_{datetime.now()}",
+            experiment_id=self.experiment.experiment_id,
+        ):
+            mlflow.sklearn.autolog()
+            print(self.object_df.columns)
+            X = self.object_df.drop(columns=["outcome"], axis=1)
+            y = self.object_df["outcome"]
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
-        )
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42
+            )
 
-        random_forest = RandomForestClassifier(
-            random_state=42, max_depth=5, n_estimators=300, min_samples_split=5
-        )
+            random_forest = RandomForestClassifier(
+                random_state=42, max_depth=5, n_estimators=300, min_samples_split=5
+            )
 
-        random_forest.fit(X_train, y_train)
+            random_forest.fit(X_train, y_train)
 
-        dump(random_forest, PathSettings.MODEL_WEIGHTS)
+            dump(random_forest, PathSettings.MODEL_WEIGHTS)

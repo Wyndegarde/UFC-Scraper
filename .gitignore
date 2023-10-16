@@ -8,3 +8,4 @@ old/
 playground.ipynb
 *.ipynb
 *.joblib
+mlruns/
