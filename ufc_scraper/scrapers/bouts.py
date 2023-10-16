@@ -154,13 +154,12 @@ class BoutScraper(ScraperABC):
     def extract_future_bout_stats(self):
         names = [
             self._clean_text(name.text)
-            for name in self.fight.find_all(
-                class_="b-fight-details__table-header-link"
-            )
+            for name in self.fight.find_all(class_="b-fight-details__table-header-link")
         ]
-        # print(names)
 
-        names_dict = {'red_fighter': names[0], 'blue_fighter': names[1]}
+        weight_class, title_bout = self._extract_weight()
+        bout_info = {"weight_class": weight_class, "title_bout": title_bout}
+        names_dict = {"red_fighter": names[0], "blue_fighter": names[1]}
         stats = []
         for stat in self.fight.find_all(class_="b-fight-details__table-text"):
             # print(self._clean_text(stat.get_text()))
@@ -178,6 +177,6 @@ class BoutScraper(ScraperABC):
 
         # Creates a dict that properly maps the stat names to the stats for each corner.
         all_stats = dict(zip(red_blue_stat_names, stats))
-        all_info = {**self.card_info, **names_dict, **all_stats}
-        
+        all_info = {**self.card_info, **names_dict, **bout_info, **all_stats}
+
         return all_info

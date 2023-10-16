@@ -4,7 +4,7 @@ from rich.progress import Progress, TimeElapsedColumn
 
 import pandas as pd
 
-from ufc_scraper.processors import DataProcessor
+from ufc_scraper.data_cleaning import DataCleaner
 from ufc_scraper.scrapers import (
     HomepageScraper,
     BoutScraper,
@@ -66,7 +66,7 @@ class ScrapingPipeline:
         )
 
     def _scrape_fight(
-        self, fight: str, date: str, location: str, raw_data_processor: DataProcessor
+        self, fight: str, date: str, location: str, raw_data_processor: DataCleaner
     ) -> None:
         bout: BoutScraper = BoutScraper(url=fight, date=date, location=location)
         full_bout_details, fighter_links = bout.scrape_url()
@@ -82,6 +82,7 @@ class ScrapingPipeline:
             full_fight_details, orient="index"
         ).T
 
+        # Adds the row to the dataframe containing all fights.
         raw_data_processor.add_row(full_fight_details_df)
 
     def run_pipeline(self) -> Any:
@@ -93,7 +94,7 @@ class ScrapingPipeline:
         """
 
         # Instantiate all data processors required for scraping.
-        raw_data_processor = DataProcessor(
+        raw_data_processor = DataCleaner(
             csv_path=PathSettings.RAW_DATA_CSV, allow_creation=True
         )
 
@@ -137,12 +138,13 @@ class ScrapingPipeline:
                 homepage.write_cache()
                 raw_data_processor.write_csv()
 
-    def _scrape_future_fight(self):
-        ...
-    def scrape_next_event(self):
+    def scrape_next_event(self) -> None:
+        # Removes the existing next event (if it exists)
         existing_future_event = Path(PathSettings.NEXT_EVENT_CSV)
         existing_future_event.unlink(missing_ok=True)
-        next_event_processor = DataProcessor(
+
+        # Creates the next event object for cleaning and writing the csv
+        next_event_processor = DataCleaner(
             csv_path=PathSettings.NEXT_EVENT_CSV, allow_creation=True
         )
 
@@ -158,7 +160,7 @@ class ScrapingPipeline:
 
         fight_links = list(set(fight_links))
         self._display_event_details(event_name, date, location, fight_links)
-        all_fights = []
+        
         for fight in fight_links:
             bout = BoutScraper(url=fight, date=date, location=location)
             fighter_links = bout.get_fighter_links()
@@ -172,5 +174,5 @@ class ScrapingPipeline:
             ).T
             next_event_processor.add_row(full_fight_details_df)
 
+        next_event_processor.clean_next_event()
         next_event_processor.write_csv()
-        return all_fights

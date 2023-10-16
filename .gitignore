@@ -5,3 +5,7 @@ logs/
 UFC_*.ipynb
 *cache/
 old/
+playground.ipynb
+*.ipynb
+*.joblib
+mlruns/
