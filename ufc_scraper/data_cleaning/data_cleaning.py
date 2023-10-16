@@ -1,6 +1,8 @@
-import re
 from datetime import datetime
+import re
+from typing import List
 
+import pandas as pd
 import numpy as np
 
 from pathlib import Path
@@ -17,21 +19,23 @@ class DataCleaner(DataFrameABC):
         if (not allow_creation) and (self.object_df.empty):
             raise ValueError("DataFrame must not be empty")
 
-        self.height_reach_cols = [
+    def _get_height_reach_cols(self):
+        return [
             column
             for column in self.object_df.columns
             if "reach" in column.lower() or "height" in column.lower()
         ]
 
     def _create_height_reach_na_filler_df(self):
+        height_reach_cols = self._get_height_reach_cols()
         reach_height_df = self.object_df.copy()
-        reach_height_df.dropna(subset=self.height_reach_cols, inplace=True)
+        reach_height_df.dropna(subset=height_reach_cols, inplace=True)
         self._apply_hr_conversions(reach_height_df)
         grouping_by_weight_classes = reach_height_df.groupby("weight_class")[
-            self.height_reach_cols
+            height_reach_cols
         ].mean()
 
-        return grouping_by_weight_classes[self.height_reach_cols]
+        return grouping_by_weight_classes[height_reach_cols]
 
     def _clean_weight_class(self):
         pattern = re.compile(
@@ -119,16 +123,18 @@ class DataCleaner(DataFrameABC):
         inches = int(inches_str.replace('"', ""))
         return round((feet * 12 + inches) * 2.54, 0)
 
-    def _apply_hr_conversions(self, dataframe):
-        for column in self.height_reach_cols:
+    def _apply_hr_conversions(
+        self, dataframe: pd.DataFrame, height_reach_cols: List[str]
+    ):
+        for column in height_reach_cols:
             if "height" in column.lower():
                 dataframe[column] = dataframe[column].apply(self._convert_height)
             else:
                 dataframe[column] = dataframe[column].apply(self._convert_reach)
 
-    def _create_height_reach_diff_columns(self):
-        height_columns = [self.height_reach_cols[0], self.height_reach_cols[2]]
-        reach_columns = [self.height_reach_cols[1], self.height_reach_cols[3]]
+    def _create_height_reach_diff_columns(self, height_reach_cols):
+        height_columns = [height_reach_cols[0], height_reach_cols[2]]
+        reach_columns = [height_reach_cols[1], height_reach_cols[3]]
 
         self.object_df["Height_diff"] = (
             self.object_df[height_columns[0]] - self.object_df[height_columns[1]]
@@ -137,21 +143,22 @@ class DataCleaner(DataFrameABC):
             self.object_df[reach_columns[0]] - self.object_df[reach_columns[1]]
         )  # Same as for height.
 
-    def _handle_height_reach(self, height_reach_no_na_df):
-        self._apply_hr_conversions(self.object_df)
+    def _handle_height_reach(self, height_reach_no_na_df: pd.DataFrame) -> None:
+        height_reach_cols: List[str] = self._get_height_reach_cols()
+        self._apply_hr_conversions(self.object_df, height_reach_cols)
 
         missing_indices = self.object_df.index[
-            self.object_df[self.height_reach_cols].isna().any(axis=1)
+            self.object_df[height_reach_cols].isna().any(axis=1)
         ]
 
-        for column in self.height_reach_cols:
+        for column in height_reach_cols:
             for i in missing_indices:
                 if np.isnan(self.object_df.loc[i, column]):
                     self.object_df.loc[i, column] = height_reach_no_na_df.loc[
                         self.object_df.loc[i, "weight_class"], column
                     ]
 
-        self._create_height_reach_diff_columns()
+        self._create_height_reach_diff_columns(height_reach_cols)
 
     def _create_age_columns(self):
         self.object_df["red_age"] = (
@@ -331,13 +338,9 @@ class DataCleaner(DataFrameABC):
             "blue_Takedown Defense": "blue_td_defence_average",
             "red_Stance": "red_stance",
             "blue_Stance": "blue_stance",
-
         }
-        self.height_reach_cols = [
-            column
-            for column in self.object_df.columns
-            if "reach" in column.lower() or "height" in column.lower()
-        ]
+        # height_reach_cols = self._get_height_reach_cols()
+
         self.object_df = self.object_df[next_event_key_columns]
         self.object_df.rename(columns=column_mapper, inplace=True)
         percent_cols = [col for col in self.object_df.columns if "average" in col]
