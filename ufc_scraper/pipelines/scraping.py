@@ -12,6 +12,7 @@ from ufc_scraper.scrapers import (
     CardScraper,
 )
 from ufc_scraper.config import PathSettings, console
+
 # console = Console()
 
 
@@ -160,12 +161,12 @@ class ScrapingPipeline:
 
         fight_links = list(set(fight_links))
         self._display_event_details(event_name, date, location, fight_links)
-        
+
         for fight in fight_links:
             bout = BoutScraper(url=fight, date=date, location=location)
             fighter_links = bout.get_fighter_links()
             fighter_profiles = self._scrape_fighter_profiles(fighter_links)
-            
+
             all_info = bout.extract_future_bout_stats()
 
             full_fight_details = {**all_info, **fighter_profiles}
@@ -174,5 +175,5 @@ class ScrapingPipeline:
             ).T
             next_event_processor.add_row(full_fight_details_df)
 
-        next_event_processor.clean_next_event()
+        # next_event_processor.clean_next_event()
         next_event_processor.write_csv()
