@@ -175,5 +175,8 @@ class ScrapingPipeline:
             ).T
             next_event_processor.add_row(full_fight_details_df)
 
-        # next_event_processor.clean_next_event()
+        next_event_processor.clean_next_event()
         next_event_processor.write_csv()
+
+    def trim_columns(self):
+        ...

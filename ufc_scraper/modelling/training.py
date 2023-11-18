@@ -26,7 +26,8 @@ class Training(DataFrameABC):
     def _setup_experiment(self):
         experiment = mlflow.get_experiment_by_name("UFC_rand_forest")
         if experiment is None:
-            mlflow.create_experiment("UFC_rand_forest")
+            experiment_id = mlflow.create_experiment("UFC_rand_forest")
+            experiment = mlflow.get_experiment(experiment_id)
 
         return experiment
 
@@ -94,3 +95,15 @@ class Training(DataFrameABC):
             random_forest.fit(X_train, y_train)
 
             dump(random_forest, PathSettings.MODEL_WEIGHTS)
+
+
+# def setup_mlflow(func, experiment_name: str):
+#     experiement = mlflow.get_experiment_by_name(experiment_name)
+#     if experiement is None:
+#         experiment_id = mlflow.create_experiment(experiment_name)
+#         experiment = mlflow.get_experiment(experiment_id)
+
+#     def inner( *args, **kwargs):
+#         func(experiment_name, experiment,*args, **kwargs)
+
+#     return inner

@@ -17,6 +17,9 @@ types-beautifulsoup4 = "*"
 pandas-stubs = "*"
 duckdb = "*"
 mlflow = "*"
+fastapi = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+inquirer = "*"
 
 [dev-packages]
 mypy = "*"
@@ -25,7 +28,7 @@ twine = "*"
 build = "*"
 pytest = "*"
 jupyter = "*"
-ruff = "*"
+ruff = "==0.0.285"
 pre-commit = "==3.4.0"
 types-requests = "*"
 

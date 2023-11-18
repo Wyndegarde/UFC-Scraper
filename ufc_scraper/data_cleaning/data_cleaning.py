@@ -10,7 +10,6 @@ import numpy as np
 
 from pathlib import Path
 
-
 from ufc_scraper.base_classes import DataFrameABC
 from ufc_scraper.config import PathSettings
 
@@ -163,10 +162,10 @@ class DataCleaner(DataFrameABC):
         height_columns = [height_reach_cols[0], height_reach_cols[2]]
         reach_columns = [height_reach_cols[1], height_reach_cols[3]]
 
-        self.object_df["Height_diff"] = (
+        self.object_df["height_diff"] = (
             self.object_df[height_columns[0]] - self.object_df[height_columns[1]]
         )  # Red height minus Blue height. So positve value suggests red taller, negative implies red shorter.
-        self.object_df["Reach_diff"] = (
+        self.object_df["reach_diff"] = (
             self.object_df[reach_columns[0]] - self.object_df[reach_columns[1]]
         )  # Same as for height.
 
@@ -366,7 +365,7 @@ class DataCleaner(DataFrameABC):
             "red_Stance": "red_stance",
             "blue_Stance": "blue_stance",
         }
-        # height_reach_cols = self._get_height_reach_cols()
+        height_reach_cols = self._get_height_reach_cols()
 
         self.object_df = self.object_df[next_event_key_columns]
         self.object_df.rename(columns=column_mapper, inplace=True)
@@ -380,5 +379,5 @@ class DataCleaner(DataFrameABC):
         self.object_df["red_stance"].replace(np.nan, "Orthodox", inplace=True)
         self._clean_weight_class()
         self._format_date_columns()
-        self._apply_hr_conversions(self.object_df)
-        self._create_height_reach_diff_columns()
+        self._apply_hr_conversions(self.object_df, height_reach_cols=height_reach_cols)
+        self._create_height_reach_diff_columns(height_reach_cols=height_reach_cols)

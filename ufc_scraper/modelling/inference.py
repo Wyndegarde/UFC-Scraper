@@ -24,13 +24,13 @@ class Inference(DataFrameABC):
 
     def _prepare_data(self):
         self.object_df = self.object_df.dropna()
-        self.object_df.rename(
-            columns={
-                "Height_diff": "height_diff",
-                "Reach_diff": "reach_diff",
-            },
-            inplace=True,
-        )
+        # self.object_df.rename(
+        #     columns={
+        #         "Height_diff": "height_diff",
+        #         "Reach_diff": "reach_diff",
+        #     },
+        #     inplace=True,
+        # )
         self.object_df = self.object_df[
             [
                 "red_stance",
