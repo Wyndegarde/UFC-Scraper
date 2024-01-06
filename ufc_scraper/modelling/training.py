@@ -16,6 +16,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 from ufc_scraper.base_classes import DataFrameABC
 from ufc_scraper.config import PathSettings
+from .constants import TRAINING_COLUMNS
 
 
 class Training(DataFrameABC):
@@ -37,23 +38,8 @@ class Training(DataFrameABC):
         ]
 
         self.object_df = self.object_df.dropna()
-
-        self.object_df = self.object_df.drop(
-            columns=[
-                "red_fighter",
-                "blue_fighter",
-                "date",
-                "red_age",
-                "blue_age",
-                "red_sub_att",
-                "blue_sub_att",
-                "red_total_str_average",
-                "blue_total_str_average",
-            ]
-        )
-        self.object_df = self.object_df[
-            self.object_df.columns.drop(list(self.object_df.filter(regex="percent")))
-        ]
+        print(self.object_df.columns)
+        self.object_df = self.object_df[TRAINING_COLUMNS]
 
         # one hot encode winner column
         winner_encoder = OrdinalEncoder()
@@ -80,7 +66,7 @@ class Training(DataFrameABC):
             experiment_id=self.experiment.experiment_id,
         ):
             mlflow.sklearn.autolog()
-            print(self.object_df.columns)
+            # print(self.object_df.columns)
             X = self.object_df.drop(columns=["outcome"], axis=1)
             y = self.object_df["outcome"]
 

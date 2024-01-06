@@ -5,6 +5,7 @@ from typing import Any
 from sklearn.preprocessing import OrdinalEncoder
 
 from ufc_scraper.base_classes import DataFrameABC
+from .constants import INFERENCE_COLUMNS
 
 
 class Inference(DataFrameABC):
@@ -24,29 +25,7 @@ class Inference(DataFrameABC):
 
     def _prepare_data(self):
         self.object_df = self.object_df.dropna()
-        # self.object_df.rename(
-        #     columns={
-        #         "Height_diff": "height_diff",
-        #         "Reach_diff": "reach_diff",
-        #     },
-        #     inplace=True,
-        # )
-        self.object_df = self.object_df[
-            [
-                "red_stance",
-                "blue_stance",
-                "height_diff",
-                "reach_diff",
-                "red_sig_strike_defence_average",
-                "blue_sig_strike_defence_average",
-                "red_td_defence_average",
-                "blue_td_defence_average",
-                "red_td_average",
-                "blue_td_average",
-                "red_sig_str_average",
-                "blue_sig_str_average",
-            ]
-        ]
+        self.object_df = self.object_df[INFERENCE_COLUMNS]
 
         stance_encoder = OrdinalEncoder()
         self.object_df["red_stance"] = stance_encoder.fit_transform(
