@@ -7,6 +7,8 @@ from rich.console import Console
 
 
 console = Console()
+
+
 class Config:
     """
     This class will hold all the configuration variables.
@@ -33,9 +35,9 @@ class PathSettings:
 
     TEST_DIR: Path = BASE_DIR.parent / "tests"
 
-    DATA_DIR: Path = BASE_DIR / "data"
+    DATA_DIR: Path = BASE_DIR.parent / "data"
 
-    RAW_DATA_CSV: Path =  DATA_DIR /"raw_ufc_data.csv"
+    RAW_DATA_CSV: Path = DATA_DIR / "raw_ufc_data.csv"
 
     EVENT_CACHE_JSON: Path = DATA_DIR / "event_cache.json"
 
@@ -48,7 +50,7 @@ class PathSettings:
     NEXT_EVENT_CSV: Path = DATA_DIR / "next_event.csv"
 
     MODEL_WEIGHTS: Path = DATA_DIR / "model_weights.joblib"
-    
+
     TEST_PAGES: Path = TEST_DIR / "html_pages"
 
     TEST_FIGHTER_PROFILE: Path = TEST_PAGES / "fighter_profile.html"

@@ -16,6 +16,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 from ufc_scraper.base_classes import DataFrameABC
 from ufc_scraper.config import PathSettings
+from .constants import TRAINING_COLUMNS
 
 
 class Training(DataFrameABC):
@@ -26,7 +27,8 @@ class Training(DataFrameABC):
     def _setup_experiment(self):
         experiment = mlflow.get_experiment_by_name("UFC_rand_forest")
         if experiment is None:
-            mlflow.create_experiment("UFC_rand_forest")
+            experiment_id = mlflow.create_experiment("UFC_rand_forest")
+            experiment = mlflow.get_experiment(experiment_id)
 
         return experiment
 
@@ -36,23 +38,8 @@ class Training(DataFrameABC):
         ]
 
         self.object_df = self.object_df.dropna()
-
-        self.object_df = self.object_df.drop(
-            columns=[
-                "red_fighter",
-                "blue_fighter",
-                "date",
-                "red_age",
-                "blue_age",
-                "red_sub_att",
-                "blue_sub_att",
-                "red_total_str_average",
-                "blue_total_str_average",
-            ]
-        )
-        self.object_df = self.object_df[
-            self.object_df.columns.drop(list(self.object_df.filter(regex="percent")))
-        ]
+        print(self.object_df.columns)
+        self.object_df = self.object_df[TRAINING_COLUMNS]
 
         # one hot encode winner column
         winner_encoder = OrdinalEncoder()
@@ -79,7 +66,7 @@ class Training(DataFrameABC):
             experiment_id=self.experiment.experiment_id,
         ):
             mlflow.sklearn.autolog()
-            print(self.object_df.columns)
+            # print(self.object_df.columns)
             X = self.object_df.drop(columns=["outcome"], axis=1)
             y = self.object_df["outcome"]
 
@@ -94,3 +81,15 @@ class Training(DataFrameABC):
             random_forest.fit(X_train, y_train)
 
             dump(random_forest, PathSettings.MODEL_WEIGHTS)
+
+
+# def setup_mlflow(func, experiment_name: str):
+#     experiement = mlflow.get_experiment_by_name(experiment_name)
+#     if experiement is None:
+#         experiment_id = mlflow.create_experiment(experiment_name)
+#         experiment = mlflow.get_experiment(experiment_id)
+
+#     def inner( *args, **kwargs):
+#         func(experiment_name, experiment,*args, **kwargs)
+
+#     return inner
