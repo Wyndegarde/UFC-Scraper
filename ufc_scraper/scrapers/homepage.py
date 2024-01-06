@@ -40,8 +40,9 @@ class HomepageScraper(ScraperABC):
         """
 
         # Slightly slower than using sets, but this way it keeps the events in order.
-        filtered_event_links: List[str] = [event_link for event_link in event_links if event_link not in self.cache]
-         
+        filtered_event_links: List[str] = [
+            event_link for event_link in event_links if event_link not in self.cache
+        ]
 
         return filtered_event_links
 
@@ -58,7 +59,16 @@ class HomepageScraper(ScraperABC):
         """
 
         #! Placeholder. Need to dynamically get the number of pages.
-        sequence: List[int] = list(range(1, 22))
+        home_page = self._get_soup()
+
+        # homepage lists the total number of pages at the bottom. Get the last page number to iterate through all events
+        page_numbers = home_page.find_all(
+            "a", class_="b-statistics__paginate-link", href=True
+        )
+        # use -2 as -1 is 'All' and we want the last page number
+        final_page = page_numbers[-2].text
+        sequence: List[int] = list(range(1, int(final_page) + 1))
+
         links: List[str] = []
 
         # For each page, get the links

@@ -86,6 +86,37 @@ class ScrapingPipeline:
         # Adds the row to the dataframe containing all fights.
         raw_data_processor.add_row(full_fight_details_df)
 
+    def _scrape_card(
+        self,
+        link_to_event: str,
+        homepage: HomepageScraper,
+        raw_data_processor: DataCleaner,
+    ):
+        # Instantiate the card scraper and get the event details.
+        fight_card = CardScraper(link_to_event)
+        event_name, date, location, fight_links = fight_card.scrape_url()
+
+        self._display_event_details(event_name, date, location, fight_links)
+
+        # Set up Rich progress bar.
+        with Progress(
+            *Progress.get_default_columns(),
+            TimeElapsedColumn(),
+            speed_estimate_period=5.0,
+        ) as progress:
+            fight_task = progress.add_task(
+                "[red]Scraping Fights...", total=len(fight_links)
+            )
+
+            # Iterate through each fight on the card and scrape the data.
+            for fight in fight_links:
+                self._scrape_fight(fight, date, location, raw_data_processor)
+                progress.update(fight_task, advance=1)
+
+        console.rule("", style="black")
+        homepage.cache.append(link_to_event)
+        console.log(f"Finished scraping {link_to_event}")
+
     def run_pipeline(self) -> Any:
         """
         Executes all the logic from the scrapers and writes the data to the csv files.
@@ -108,30 +139,14 @@ class ScrapingPipeline:
         filtered_event_links: List[str] = homepage.scrape_url()
         total_events: int = len(filtered_event_links)
         for index, link_to_event in enumerate(filtered_event_links):
-            # Instantiate the card scraper and get the event details.
-            fight_card = CardScraper(link_to_event)
-            event_name, date, location, fight_links = fight_card.scrape_url()
-
-            self._display_event_details(event_name, date, location, fight_links)
-
-            # Set up Rich progress bar.
-            with Progress(
-                *Progress.get_default_columns(),
-                TimeElapsedColumn(),
-                speed_estimate_period=5.0,
-            ) as progress:
-                fight_task = progress.add_task(
-                    "[red]Scraping Fights...", total=len(fight_links)
-                )
-
-                # Iterate through each fight on the card and scrape the data.
-                for fight in fight_links:
-                    self._scrape_fight(fight, date, location, raw_data_processor)
-                    progress.update(fight_task, advance=1)
-
-            console.rule("", style="black")
-            homepage.cache.append(link_to_event)
-            console.log(f"Finished scraping {link_to_event}")
+            # Handle case where information is missing from a fight card.
+            try:
+                # Scrape the card
+                self._scrape_card(link_to_event, homepage, raw_data_processor)
+            # TODO: Improve exception handling
+            except Exception as e:
+                console.log(f"Failed to scrape {link_to_event}")
+                console.log(e)
 
             # write the data every 10 events and at the end. Reduces the risk of losing data while avoiding writing every time
             # TODO: Fix 2nd condition. Cba right now.
