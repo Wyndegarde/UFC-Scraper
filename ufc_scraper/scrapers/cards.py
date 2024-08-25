@@ -13,19 +13,19 @@ class CardScraper(ScraperABC):
 
     def __init__(self, url: str) -> None:
         super().__init__(url)
-        self.ufc_card = self._get_soup()
+        # self.ufc_card = self._get_soup()
 
-    def _extract_event_name(self) -> str:
+    def _extract_event_name(self, ufc_card) -> str:
         """
         Responsible for extracting the event name of the card.
 
         Returns:
             str: The event name
         """
-        event_name: str = self.ufc_card.find(class_="b-content__title-highlight").text  # type: ignore
+        event_name: str = ufc_card.find(class_="b-content__title-highlight").text  # type: ignore
         return event_name.strip()
 
-    def _extract_event_details(self) -> Tuple[str, str]:
+    def _extract_event_details(self, ufc_card) -> Tuple[str, str]:
         """
         Gets the date and location of the event.
 
@@ -33,7 +33,7 @@ class CardScraper(ScraperABC):
             Tuple[str,str]: the date and location of the event.
         """
         event_info = (
-            self.ufc_card.find(class_="b-list__box-list")  # type: ignore
+            ufc_card.find(class_="b-list__box-list")  # type: ignore
             .text.replace("\n", "")
             .split("      ")
         )  # type: ignore
@@ -44,7 +44,7 @@ class CardScraper(ScraperABC):
 
         return (date, location)
 
-    def _extract_fight_links(self) -> List[str]:
+    def _extract_fight_links(self, ufc_card) -> List[str]:
         """
         Extracts all the links to the fights on the card.
 
@@ -52,19 +52,20 @@ class CardScraper(ScraperABC):
             List[str]: List of urls to each fight on the card.
         """
         fight_links: List[str] = []
-        for tag in self.ufc_card.find_all():
+        for tag in ufc_card.find_all():
             link_to_fight = tag.get("data-link")
             if link_to_fight and "fight-details" in link_to_fight:
                 fight_links.append(link_to_fight)
 
         return fight_links
 
-    def scrape_url(self) -> Tuple[str, str, str, List[str]]:
+    async def scrape_url(self) -> Tuple[str, str, str, List[str]]:
         """
         Executes all the logic to get the information about a single event.
         """
-        event_name: str = self._extract_event_name()
-        date, location = self._extract_event_details()
-        fight_links: List[str] = self._extract_fight_links()
+        ufc_card = await self._aget_soup()
+        event_name: str = self._extract_event_name(ufc_card)
+        date, location = self._extract_event_details(ufc_card)
+        fight_links: List[str] = self._extract_fight_links(ufc_card)
 
         return event_name, date, location, fight_links
