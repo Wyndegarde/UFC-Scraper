@@ -9,8 +9,10 @@ from abc import ABC, abstractmethod
 
 import requests  # type: ignore
 import aiohttp
-import asyncio
+
+# import asyncio
 from bs4 import BeautifulSoup
+from loguru import logger
 
 
 class ScraperABC(ABC):
@@ -57,8 +59,8 @@ class ScraperABC(ABC):
         Returns:
             BeautifulSoup: Soup object for the given URL.
         """
-        await asyncio.sleep(1)
         async with aiohttp.ClientSession() as session:
+            logger.info(f"Scraping URL: {self.url}")
             async with session.get(self.url, params=params) as response:
                 html = await response.text()
                 soup = BeautifulSoup(html, "lxml")

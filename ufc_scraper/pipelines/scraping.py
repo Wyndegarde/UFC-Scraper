@@ -142,7 +142,10 @@ class ScrapingPipeline:
             cache_file_path=PathSettings.EVENT_CACHE_JSON,
         )
 
-        filtered_event_links: List[str] = await homepage.scrape_url()
+        # filtered_event_links: List[str] = await homepage.scrape_url()
+        filtered_event_links = [
+            "http://www.ufcstats.com/event-details/c4b6099f0d25f75e"
+        ]
         # total_events: int = len(filtered_event_links)
 
         # if (index % 10 == 0) or (total_events - index <= 10):
@@ -150,24 +153,37 @@ class ScrapingPipeline:
         #     raw_data_processor.write_csv()
 
         tasks = []
+        batch = []
+        batch_size = 10
         for index, link_to_event in enumerate(filtered_event_links):
-            tasks.append(
-                self.scrape_card_task(
-                    link_to_event, index, homepage, raw_data_processor
+            batch.append(link_to_event)
+            if len(batch) == batch_size:
+                for link in batch:
+                    tasks.append(
+                        asyncio.create_task(
+                            self.scrape_card_task(link, homepage, raw_data_processor)
+                        )
+                    )
+                await asyncio.sleep(1)
+                batch = []
+
+        if batch:
+            for link in batch:
+                tasks.append(
+                    asyncio.create_task(
+                        self.scrape_card_task(link, homepage, raw_data_processor)
+                    )
                 )
-            )
 
             # if (index % 10 == 0) or (total_events - index <= 10):
             #     homepage.write_cache()
             #     raw_data_processor.write_csv()
 
-        await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks, return_exceptions=True)
         homepage.write_cache()
         raw_data_processor.write_csv()
 
-    async def scrape_card_task(
-        self, link_to_event, index, homepage, raw_data_processor
-    ):
+    async def scrape_card_task(self, link_to_event, homepage, raw_data_processor):
         try:
             await self._scrape_card(link_to_event, homepage, raw_data_processor)
         except Exception as e:

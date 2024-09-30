@@ -1,5 +1,3 @@
-
-
 def try_except(func):
     def wrapper(*args, **kwargs):
         try:

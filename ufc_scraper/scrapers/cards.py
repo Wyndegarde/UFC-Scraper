@@ -4,6 +4,7 @@ Class to scrape a single event.
 from typing import List, Tuple
 
 from ufc_scraper.base_classes import ScraperABC
+from loguru import logger
 
 
 class CardScraper(ScraperABC):
@@ -64,8 +65,11 @@ class CardScraper(ScraperABC):
         Executes all the logic to get the information about a single event.
         """
         ufc_card = await self._aget_soup()
+        logger.info("Getting Event Name")
         event_name: str = self._extract_event_name(ufc_card)
+        logger.info("Getting Event Details")
         date, location = self._extract_event_details(ufc_card)
+        logger.info("Getting Fight Links")
         fight_links: List[str] = self._extract_fight_links(ufc_card)
 
         return event_name, date, location, fight_links

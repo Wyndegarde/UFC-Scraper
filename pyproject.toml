@@ -41,5 +41,5 @@ test = [
 packages = ["ufc_scraper"]
 
 [tool.ruff]
-extend-ignore = ["E501"]
+extend-ignore = ["E501", "F401"]
 

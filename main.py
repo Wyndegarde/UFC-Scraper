@@ -10,12 +10,12 @@ async def main():
     PathSettings.DATA_DIR.mkdir(parents=True, exist_ok=True)
     scraping_pipeline = ScrapingPipeline()
     await scraping_pipeline.run_pipeline()
-    data_cleaning = DataCleaningPipeline()
-    data_cleaning.run_pipeline()
-    feature_engineering = FeatureEngineering(
-        csv_path=PathSettings.CLEAN_DATA_CSV, allow_creation=False
-    )
-    feature_engineering.run_feature_engineering()
+    # data_cleaning = DataCleaningPipeline()
+    # data_cleaning.run_pipeline()
+    # feature_engineering = FeatureEngineering(
+    #     csv_path=PathSettings.CLEAN_DATA_CSV, allow_creation=False
+    # )
+    # feature_engineering.run_feature_engineering()
 
 
 if __name__ == "__main__":
