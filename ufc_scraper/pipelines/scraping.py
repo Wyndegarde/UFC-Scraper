@@ -23,6 +23,8 @@ class ScrapingPipeline:
     Runs the pipeline to scrape the UFC stats data
     """
 
+    sem = asyncio.Semaphore(10)  # Limit the number of concurrent tasks
+
     async def _scrape_fighter_profiles(
         self, fighter_links: List[str]
     ) -> Dict[str, str]:
@@ -74,11 +76,16 @@ class ScrapingPipeline:
         self, fight: str, date: str, location: str, raw_data_processor: DataCleaner
     ) -> None:
         bout: BoutScraper = BoutScraper(url=fight, date=date, location=location)
-        full_bout_details, fighter_links = await bout.scrape_url()
+        try:
+            full_bout_details, fighter_links = await bout.scrape_url()
 
-        fighter_profiles: Dict[str, str] = await self._scrape_fighter_profiles(
-            fighter_links
-        )
+            fighter_profiles: Dict[str, str] = await self._scrape_fighter_profiles(
+                fighter_links
+            )
+        except Exception as e:
+            console.log(f"Failed to scrape {fight}")
+            console.log(e)
+            return
 
         full_fight_details: Dict[str, str] = {
             **full_bout_details,
@@ -116,7 +123,10 @@ class ScrapingPipeline:
 
         # Iterate through each fight on the card and scrape the data.
         for fight in fight_links:
-            await self._scrape_fight(fight, date, location, raw_data_processor)
+            try:
+                await self._scrape_fight(fight, date, location, raw_data_processor)
+            except Exception:
+                return
             # progress.update(fight_task, advance=1)
 
         console.rule("", style="black")
@@ -142,10 +152,7 @@ class ScrapingPipeline:
             cache_file_path=PathSettings.EVENT_CACHE_JSON,
         )
 
-        # filtered_event_links: List[str] = await homepage.scrape_url()
-        filtered_event_links = [
-            "http://www.ufcstats.com/event-details/c4b6099f0d25f75e"
-        ]
+        filtered_event_links: List[str] = await homepage.scrape_url()
         # total_events: int = len(filtered_event_links)
 
         # if (index % 10 == 0) or (total_events - index <= 10):
@@ -179,16 +186,21 @@ class ScrapingPipeline:
             #     homepage.write_cache()
             #     raw_data_processor.write_csv()
 
-        await asyncio.gather(*tasks, return_exceptions=True)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for result in results:
+            if isinstance(result, Exception):
+                console.log(result)
         homepage.write_cache()
         raw_data_processor.write_csv()
 
     async def scrape_card_task(self, link_to_event, homepage, raw_data_processor):
-        try:
-            await self._scrape_card(link_to_event, homepage, raw_data_processor)
-        except Exception as e:
-            console.log(f"Failed to scrape {link_to_event}")
-            console.log(e)
+        async with self.sem:
+            try:
+                await self._scrape_card(link_to_event, homepage, raw_data_processor)
+            except Exception as e:
+                console.log(f"Failed to scrape {link_to_event}")
+                console.log(e)
+                return
 
     async def scrape_next_event(self) -> None:
         # Removes the existing next event (if it exists)
@@ -205,7 +217,7 @@ class ScrapingPipeline:
             cache_file_path=PathSettings.EVENT_CACHE_JSON,
         )
         # Returns the link to the next event - different tag to previous events.
-        next_event_link = homepage._get_next_event()
+        next_event_link = await homepage._get_next_event()
 
         fight_card = CardScraper(next_event_link)
         event_name, date, location, fight_links = await fight_card.scrape_url()

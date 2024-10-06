@@ -74,7 +74,7 @@ class HomepageScraper(ScraperABC):
 
         # For each page, get the links
         for i in sequence:
-            landing_page = self._get_soup(params={"page": i})
+            landing_page = await self._aget_soup(params={"page": i})
             # For each link in each page, go through them
             for link in landing_page.find_all(
                 "a", class_="b-link b-link_style_black", href=True
@@ -84,11 +84,11 @@ class HomepageScraper(ScraperABC):
         filtered_links = self._filter_event_links(links)
         return filtered_links
 
-    def _get_next_event(self) -> str:
+    async def _get_next_event(self) -> str:
         """
         Method to get the link for the next event.
         """
-        landing_page = self._get_soup()
+        landing_page = await self._aget_soup()
         next_event_link = landing_page.find_all(class_="b-link b-link_style_white")
         # using find all gets all the links, so we need to get the first one which contains the next event - check.
         return next_event_link[0]["href"]
