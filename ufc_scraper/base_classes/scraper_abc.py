@@ -8,7 +8,11 @@ from typing import Dict, Union, List, Optional
 from abc import ABC, abstractmethod
 
 import requests  # type: ignore
+import aiohttp
+
+# import asyncio
 from bs4 import BeautifulSoup
+from loguru import logger
 
 
 class ScraperABC(ABC):
@@ -42,6 +46,25 @@ class ScraperABC(ABC):
         response = requests.get(self.url, timeout=100, params=params)
         soup: BeautifulSoup = BeautifulSoup(response.text, "lxml")
         return soup
+
+    async def _aget_soup(
+        self, params: Optional[Dict[str, Union[str, int]]] = None
+    ) -> BeautifulSoup:
+        """
+        Method to get the soup for a given URL asynchronously.
+
+        Args:
+            params (Optional[Dict[str, Union[str, int]]], optional): params dict for making a reques. Defaults to None.
+
+        Returns:
+            BeautifulSoup: Soup object for the given URL.
+        """
+        async with aiohttp.ClientSession() as session:
+            logger.info(f"Scraping URL: {self.url}")
+            async with session.get(self.url, params=params) as response:
+                html = await response.text()
+                soup = BeautifulSoup(html, "lxml")
+                return soup
 
     def _clean_text(self, text: str) -> str:
         """

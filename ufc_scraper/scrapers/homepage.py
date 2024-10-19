@@ -53,13 +53,14 @@ class HomepageScraper(ScraperABC):
         with open(self.cache_file_path, "w") as f:
             json.dump(self.cache, f)
 
-    def _get_links(self) -> List[str]:
+    async def _get_links(self) -> List[str]:
         """
         Method to get all the links from the homepage across all pages
         """
 
         #! Placeholder. Need to dynamically get the number of pages.
-        home_page = self._get_soup()
+        # home_page = self._get_soup()
+        home_page = await self._aget_soup()
 
         # homepage lists the total number of pages at the bottom. Get the last page number to iterate through all events
         page_numbers = home_page.find_all(
@@ -73,7 +74,7 @@ class HomepageScraper(ScraperABC):
 
         # For each page, get the links
         for i in sequence:
-            landing_page = self._get_soup(params={"page": i})
+            landing_page = await self._aget_soup(params={"page": i})
             # For each link in each page, go through them
             for link in landing_page.find_all(
                 "a", class_="b-link b-link_style_black", href=True
@@ -83,17 +84,19 @@ class HomepageScraper(ScraperABC):
         filtered_links = self._filter_event_links(links)
         return filtered_links
 
-    def _get_next_event(self) -> str:
+    async def _get_next_event(self) -> str:
         """
         Method to get the link for the next event.
         """
-        landing_page = self._get_soup()
+        landing_page = await self._aget_soup()
         next_event_link = landing_page.find_all(class_="b-link b-link_style_white")
         # using find all gets all the links, so we need to get the first one which contains the next event - check.
         return next_event_link[0]["href"]
 
-    def scrape_url(self) -> List[str]:
-        return self._get_links()
+    async def scrape_url(self) -> List[str]:
+        links = await self._get_links()
+        return links
+        # return self._get_links()
         # return ["http://www.ufcstats.com/event-details/3c6976f8182d9527",
         #         "http://www.ufcstats.com/event-details/51b1e2fd9872005b",
         #         "http://www.ufcstats.com/event-details/6fb1ba67bef41b37",

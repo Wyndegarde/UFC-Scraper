@@ -1,6 +1,7 @@
 from typing import Dict, Any, List
 from pathlib import Path
-from rich.progress import Progress, TimeElapsedColumn
+
+# from rich.progress import Progress, TimeElapsedColumn
 
 import pandas as pd
 
@@ -12,6 +13,7 @@ from ufc_scraper.scrapers import (
     CardScraper,
 )
 from ufc_scraper.config import PathSettings, console
+import asyncio
 
 # console = Console()
 
@@ -21,7 +23,11 @@ class ScrapingPipeline:
     Runs the pipeline to scrape the UFC stats data
     """
 
-    def _scrape_fighter_profiles(self, fighter_links: List[str]) -> Dict[str, str]:
+    sem = asyncio.Semaphore(10)  # Limit the number of concurrent tasks
+
+    async def _scrape_fighter_profiles(
+        self, fighter_links: List[str]
+    ) -> Dict[str, str]:
         """
         Method responsible for extracting the fighter profiles from the bout and formating them.
 
@@ -39,8 +45,8 @@ class ScrapingPipeline:
         blue_fighter = FighterScraper(fighter_links[1], red_corner=False)
 
         # Scrape the info for each fighter.
-        red_fighter_profile: Dict[str, str] = red_fighter.scrape_url()
-        blue_fighter_profile: Dict[str, str] = blue_fighter.scrape_url()
+        red_fighter_profile: Dict[str, str] = await red_fighter.scrape_url()
+        blue_fighter_profile: Dict[str, str] = await blue_fighter.scrape_url()
 
         # Combine the two dictionaries into one.
         fighter_profiles: Dict[str, str] = {
@@ -66,13 +72,20 @@ class ScrapingPipeline:
             justify="center",
         )
 
-    def _scrape_fight(
+    async def _scrape_fight(
         self, fight: str, date: str, location: str, raw_data_processor: DataCleaner
     ) -> None:
         bout: BoutScraper = BoutScraper(url=fight, date=date, location=location)
-        full_bout_details, fighter_links = bout.scrape_url()
+        try:
+            full_bout_details, fighter_links = await bout.scrape_url()
 
-        fighter_profiles: Dict[str, str] = self._scrape_fighter_profiles(fighter_links)
+            fighter_profiles: Dict[str, str] = await self._scrape_fighter_profiles(
+                fighter_links
+            )
+        except Exception as e:
+            console.log(f"Failed to scrape {fight}")
+            console.log(e)
+            return
 
         full_fight_details: Dict[str, str] = {
             **full_bout_details,
@@ -86,7 +99,7 @@ class ScrapingPipeline:
         # Adds the row to the dataframe containing all fights.
         raw_data_processor.add_row(full_fight_details_df)
 
-    def _scrape_card(
+    async def _scrape_card(
         self,
         link_to_event: str,
         homepage: HomepageScraper,
@@ -94,30 +107,33 @@ class ScrapingPipeline:
     ):
         # Instantiate the card scraper and get the event details.
         fight_card = CardScraper(link_to_event)
-        event_name, date, location, fight_links = fight_card.scrape_url()
+        event_name, date, location, fight_links = await fight_card.scrape_url()
 
         self._display_event_details(event_name, date, location, fight_links)
 
         # Set up Rich progress bar.
-        with Progress(
-            *Progress.get_default_columns(),
-            TimeElapsedColumn(),
-            speed_estimate_period=5.0,
-        ) as progress:
-            fight_task = progress.add_task(
-                "[red]Scraping Fights...", total=len(fight_links)
-            )
+        # with Progress(
+        #     *Progress.get_default_columns(),
+        #     TimeElapsedColumn(),
+        #     speed_estimate_period=5.0,
+        # ) as progress:
+        #     fight_task = progress.add_task(
+        #         "[red]Scraping Fights...", total=len(fight_links)
+        #     )
 
-            # Iterate through each fight on the card and scrape the data.
-            for fight in fight_links:
-                self._scrape_fight(fight, date, location, raw_data_processor)
-                progress.update(fight_task, advance=1)
+        # Iterate through each fight on the card and scrape the data.
+        for fight in fight_links:
+            try:
+                await self._scrape_fight(fight, date, location, raw_data_processor)
+            except Exception:
+                return
+            # progress.update(fight_task, advance=1)
 
         console.rule("", style="black")
         homepage.cache.append(link_to_event)
         console.log(f"Finished scraping {link_to_event}")
 
-    def run_pipeline(self) -> Any:
+    async def run_pipeline(self) -> Any:
         """
         Executes all the logic from the scrapers and writes the data to the csv files.
 
@@ -136,25 +152,57 @@ class ScrapingPipeline:
             cache_file_path=PathSettings.EVENT_CACHE_JSON,
         )
 
-        filtered_event_links: List[str] = homepage.scrape_url()
-        total_events: int = len(filtered_event_links)
+        filtered_event_links: List[str] = await homepage.scrape_url()
+        # total_events: int = len(filtered_event_links)
+
+        # if (index % 10 == 0) or (total_events - index <= 10):
+        #     homepage.write_cache()
+        #     raw_data_processor.write_csv()
+
+        tasks = []
+        batch = []
+        batch_size = 10
         for index, link_to_event in enumerate(filtered_event_links):
-            # Handle case where information is missing from a fight card.
+            batch.append(link_to_event)
+            if len(batch) == batch_size:
+                for link in batch:
+                    tasks.append(
+                        asyncio.create_task(
+                            self.scrape_card_task(link, homepage, raw_data_processor)
+                        )
+                    )
+                await asyncio.sleep(1)
+                batch = []
+
+        if batch:
+            for link in batch:
+                tasks.append(
+                    asyncio.create_task(
+                        self.scrape_card_task(link, homepage, raw_data_processor)
+                    )
+                )
+
+            # if (index % 10 == 0) or (total_events - index <= 10):
+            #     homepage.write_cache()
+            #     raw_data_processor.write_csv()
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for result in results:
+            if isinstance(result, Exception):
+                console.log(result)
+        homepage.write_cache()
+        raw_data_processor.write_csv()
+
+    async def scrape_card_task(self, link_to_event, homepage, raw_data_processor):
+        async with self.sem:
             try:
-                # Scrape the card
-                self._scrape_card(link_to_event, homepage, raw_data_processor)
-            # TODO: Improve exception handling
+                await self._scrape_card(link_to_event, homepage, raw_data_processor)
             except Exception as e:
                 console.log(f"Failed to scrape {link_to_event}")
                 console.log(e)
+                return
 
-            # write the data every 10 events and at the end. Reduces the risk of losing data while avoiding writing every time
-            # TODO: Fix 2nd condition. Cba right now.
-            if (index % 10 == 0) or (total_events - index <= 10):
-                homepage.write_cache()
-                raw_data_processor.write_csv()
-
-    def scrape_next_event(self) -> None:
+    async def scrape_next_event(self) -> None:
         # Removes the existing next event (if it exists)
         existing_future_event = Path(PathSettings.NEXT_EVENT_CSV)
         existing_future_event.unlink(missing_ok=True)
@@ -169,26 +217,27 @@ class ScrapingPipeline:
             cache_file_path=PathSettings.EVENT_CACHE_JSON,
         )
         # Returns the link to the next event - different tag to previous events.
-        next_event_link = homepage._get_next_event()
+        next_event_link = await homepage._get_next_event()
 
         fight_card = CardScraper(next_event_link)
-        event_name, date, location, fight_links = fight_card.scrape_url()
+        event_name, date, location, fight_links = await fight_card.scrape_url()
 
         fight_links = list(set(fight_links))
         self._display_event_details(event_name, date, location, fight_links)
 
         for fight in fight_links:
             bout = BoutScraper(url=fight, date=date, location=location)
-            fighter_links = bout.get_fighter_links()
-            fighter_profiles = self._scrape_fighter_profiles(fighter_links)
+            fight_ = await bout._aget_soup()
+            fighter_links = bout.get_fighter_links(fight=fight_)
+            fighter_profiles = await self._scrape_fighter_profiles(fighter_links)
 
-            all_info = bout.extract_future_bout_stats()
+            all_info = await bout.extract_future_bout_stats()
 
             full_fight_details = {**all_info, **fighter_profiles}
             full_fight_details_df = pd.DataFrame.from_dict(
                 full_fight_details, orient="index"
             ).T
-            next_event_processor.add_row(full_fight_details_df)
+        next_event_processor.add_row(full_fight_details_df)
 
         next_event_processor.clean_next_event()
         next_event_processor.write_csv()

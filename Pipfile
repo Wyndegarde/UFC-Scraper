@@ -20,6 +20,8 @@ mlflow = "*"
 fastapi = "*"
 uvicorn = {extras = ["standard"], version = "*"}
 inquirer = "*"
+aiohttp = "*"
+loguru = "*"
 
 [dev-packages]
 mypy = "*"

@@ -19,12 +19,12 @@ class FighterScraper(ScraperABC):
             url (str): URL for a single fighters profile.
         """
         super().__init__(url)
-        self.fighter = self._get_soup()
+        # self.fighter = self._get_soup()
         self.prefix = self.red_prefix if red_corner else self.blue_prefix
 
-    def _extract_fighter_record(self) -> List[str]:
+    def _extract_fighter_record(self, fighter) -> List[str]:
         # First find their record.
-        record = self.fighter.find(class_="b-content__title-record")
+        record = fighter.find(class_="b-content__title-record")
 
         # Strip it down and add it to the list - results in ["Record", "Ws-Ls-Ds" (x Ncs)"]
         # ? Ncs is number of no contests. unsure if included if x=0.
@@ -32,7 +32,7 @@ class FighterScraper(ScraperABC):
 
         return cleaned_record
 
-    def _extract_fighter_details(self) -> Dict[str, str]:
+    def _extract_fighter_details(self, fighter) -> Dict[str, str]:
         """
         Generates a dictionary containing all of the information for a single fighter.
 
@@ -41,10 +41,10 @@ class FighterScraper(ScraperABC):
         """
 
         # List where [0] is fluff, [1] is the actual record.
-        cleaned_record: List[str] = self._extract_fighter_record()
+        cleaned_record: List[str] = self._extract_fighter_record(fighter)
 
         # Next we go through all of the summary stats for each fighter.
-        career_info = self.fighter.find_all(
+        career_info = fighter.find_all(
             class_="b-list__box-list-item b-list__box-list-item_type_block"
         )
 
@@ -66,7 +66,8 @@ class FighterScraper(ScraperABC):
         fighter_profile[self.prefix + "record"] = cleaned_record[1]
         return fighter_profile
 
-    def scrape_url(self) -> Dict[str, str]:
-        fighter_profile: Dict[str, str] = self._extract_fighter_details()
+    async def scrape_url(self) -> Dict[str, str]:
+        fighter = await self._aget_soup()
+        fighter_profile: Dict[str, str] = self._extract_fighter_details(fighter)
 
         return fighter_profile

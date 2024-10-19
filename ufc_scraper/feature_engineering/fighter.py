@@ -108,22 +108,20 @@ class Fighter:
         lin_reg_df = lin_reg_df.dropna()
         return lin_reg_df
 
-    def setup_missing_val_df(self, ordered_stats: DefaultDict[str, List[float]]) -> pd.DataFrame:
-        df: pd.DataFrame = pd.DataFrame(ordered_stats, index = self.fighter_df.index)
-        col_mapper: Dict[str,str] = {column: column.replace("percent", "average") for column in df.columns}
+    def setup_missing_val_df(
+        self, ordered_stats: DefaultDict[str, List[float]]
+    ) -> pd.DataFrame:
+        df: pd.DataFrame = pd.DataFrame(ordered_stats, index=self.fighter_df.index)
+        col_mapper: Dict[str, str] = {
+            column: column.replace("percent", "average") for column in df.columns
+        }
 
         for old_column, new_column in col_mapper.items():
             df = self._create_x_column(df, new_column, old_column)
 
         return df
-        
 
-
-
-
-
-
-            # # See docstring for explanation of what this does. Creates the X column
-            # lin_reg_df[x_col] = lin_reg_df[column].expanding(2).mean().shift(1)
-            # #! Return to this as unsure what mypy is moaning about
-            # lin_reg_df.loc[1, x_col] = lin_reg_df.loc[0, column]  # type: ignore
+        # # See docstring for explanation of what this does. Creates the X column
+        # lin_reg_df[x_col] = lin_reg_df[column].expanding(2).mean().shift(1)
+        # #! Return to this as unsure what mypy is moaning about
+        # lin_reg_df.loc[1, x_col] = lin_reg_df.loc[0, column]  # type: ignore

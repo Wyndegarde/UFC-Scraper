@@ -1,4 +1,4 @@
-from typing import List, DefaultDict, Any, Dict
+from typing import List, DefaultDict, Dict
 import numpy as np
 import pandas as pd
 
@@ -131,7 +131,7 @@ class FeatureEngineering(DataFrameABC):
                     ]
 
     def fill_missing_value(
-        self, fighter_stats_df: pd.DataFrame, col_name: str, model: Any
+        self, fighter_stats_df: pd.DataFrame, col_name: str, model: RegressionModel
     ) -> pd.DataFrame:
         """
         Generates a prediction for a missing value and adds it to the fighters dataframe.
@@ -139,7 +139,7 @@ class FeatureEngineering(DataFrameABC):
         Args:
             fighter_stats_df (pd.DataFrame): The dataframe containing the average stats for a given fighter.
             col_name (str): Name of the column to fill in.
-            model (Any): The trained model to use for the prediction.
+            model (RegressionModel): The trained model to use for the prediction.
 
         Returns:
             pd.DataFrame: The input df but with the missing value filled in.

@@ -2,12 +2,14 @@ from ufc_scraper.pipelines import ScrapingPipeline, DataCleaningPipeline
 from ufc_scraper.feature_engineering import FeatureEngineering
 from ufc_scraper.config import PathSettings
 
+import asyncio
 
-def main():
+
+async def main():
     # create data dir if it doesnt exist
     PathSettings.DATA_DIR.mkdir(parents=True, exist_ok=True)
     scraping_pipeline = ScrapingPipeline()
-    scraping_pipeline.run_pipeline()
+    await scraping_pipeline.run_pipeline()
     data_cleaning = DataCleaningPipeline()
     data_cleaning.run_pipeline()
     feature_engineering = FeatureEngineering(
@@ -17,4 +19,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
