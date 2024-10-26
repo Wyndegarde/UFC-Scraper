@@ -9,3 +9,4 @@ playground.ipynb
 *.ipynb
 *.joblib
 mlruns/
+*sqlite3
