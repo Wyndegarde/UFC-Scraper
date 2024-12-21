@@ -133,7 +133,7 @@ class ScrapingPipeline:
         homepage.cache.append(link_to_event)
         console.log(f"Finished scraping {link_to_event}")
 
-    async def run_pipeline(self) -> Any:
+    async def run(self) -> Any:
         """
         Executes all the logic from the scrapers and writes the data to the csv files.
 

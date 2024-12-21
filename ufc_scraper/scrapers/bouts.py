@@ -22,7 +22,6 @@ class BoutScraper(ScraperABC):
             location (str): The location the bout took place.
         """
         super().__init__(url)
-        # self.fight = self._get_soup()
         self.card_info = {"date": date, "location": location}
 
     def _extract_weight(self, fight) -> Tuple[str, str]:
@@ -159,7 +158,7 @@ class BoutScraper(ScraperABC):
             for name in fight.find_all(class_="b-fight-details__table-header-link")
         ]
 
-        weight_class, title_bout = self._extract_weight()
+        weight_class, title_bout = self._extract_weight(fight=fight)
         bout_info = {"weight_class": weight_class, "title_bout": title_bout}
         names_dict = {"red_fighter": names[0], "blue_fighter": names[1]}
         stats = []

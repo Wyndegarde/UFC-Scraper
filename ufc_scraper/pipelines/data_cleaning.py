@@ -7,7 +7,7 @@ from ufc_scraper.config import PathSettings
 
 
 class DataCleaningPipeline:
-    def run_pipeline(self):
+    def run(self):
         data_cleaner = DataCleaner(
             csv_path=PathSettings.RAW_DATA_CSV, allow_creation=False
         )

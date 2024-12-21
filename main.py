@@ -9,9 +9,9 @@ async def main():
     # create data dir if it doesnt exist
     PathSettings.DATA_DIR.mkdir(parents=True, exist_ok=True)
     scraping_pipeline = ScrapingPipeline()
-    await scraping_pipeline.run_pipeline()
+    await scraping_pipeline.run()
     data_cleaning = DataCleaningPipeline()
-    data_cleaning.run_pipeline()
+    data_cleaning.run()
     feature_engineering = FeatureEngineering(
         csv_path=PathSettings.CLEAN_DATA_CSV, allow_creation=False
     )
