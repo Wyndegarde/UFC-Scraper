@@ -2,8 +2,8 @@
 This script is respoonsible for taking in the scraped data and ceaning it for use in the model.
 """
 
-from ufc_scraper.data_cleaning import DataCleaner
-from ufc_scraper.config import PathSettings
+from src.lib.data_cleaning import DataCleaner
+from src.config import PathSettings
 
 
 class DataCleaningPipeline:

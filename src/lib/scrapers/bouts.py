@@ -4,7 +4,7 @@ Module to get the information for each bout on a card.
 import re
 from typing import List, Dict, Tuple
 
-from ufc_scraper.base_classes import ScraperABC
+from .abstract import ScraperABC
 
 
 class BoutScraper(ScraperABC):

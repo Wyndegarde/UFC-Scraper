@@ -3,7 +3,7 @@ Class to scrape a single event.
 """
 from typing import List, Tuple
 
-from ufc_scraper.base_classes import ScraperABC
+from .abstract import ScraperABC
 from loguru import logger
 
 

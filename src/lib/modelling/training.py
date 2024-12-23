@@ -14,8 +14,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 
 
-from ufc_scraper.base_classes import DataFrameABC
-from ufc_scraper.config import PathSettings
+from src.lib.abstract import DataFrameABC
+from src.config import PathSettings
 from .constants import TRAINING_COLUMNS
 
 

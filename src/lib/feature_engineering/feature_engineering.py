@@ -2,8 +2,8 @@ from typing import List, DefaultDict, Dict
 import numpy as np
 import pandas as pd
 
-from ufc_scraper.base_classes import DataFrameABC
-from ufc_scraper.config import PathSettings
+from src.lib.abstract import DataFrameABC
+from src.config import PathSettings
 from .regression import RegressionModel
 from .fighter import Fighter
 

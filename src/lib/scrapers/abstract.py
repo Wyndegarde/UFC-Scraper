@@ -99,8 +99,8 @@ class ScraperABC(ABC):
             return [self.red_prefix + text, self.blue_prefix + text]
 
     @abstractmethod
-    def scrape_url(self):
+    async def scrape_url(self):
         """
-        Abstract method to scrape the URL.
-        All subclasses must implement this method to execute the logic for scraping their URL.
+        Abstract method that must be implemented by concrete classes
+        to scrape the URL and return the relevant data.
         """

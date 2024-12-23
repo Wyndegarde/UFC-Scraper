@@ -10,8 +10,8 @@ import numpy as np
 
 from pathlib import Path
 
-from ufc_scraper.base_classes import DataFrameABC
-from ufc_scraper.config import PathSettings
+from src.lib.abstract import DataFrameABC
+from src.config import PathSettings
 
 
 class DataCleaner(DataFrameABC):

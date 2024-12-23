@@ -2,7 +2,7 @@
 Module for scraping the information for each fighter from their stats page.
 """
 from typing import Dict, List
-from ufc_scraper.base_classes import ScraperABC
+from .abstract import ScraperABC
 
 
 class FighterScraper(ScraperABC):

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import List
 
-from ufc_scraper.base_classes import ScraperABC
+from .abstract import ScraperABC
 
 
 class HomepageScraper(ScraperABC):

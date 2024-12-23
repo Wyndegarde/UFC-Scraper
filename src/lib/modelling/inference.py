@@ -4,7 +4,7 @@ from typing import Any
 
 from sklearn.preprocessing import OrdinalEncoder
 
-from ufc_scraper.base_classes import DataFrameABC
+from src.lib.abstract import DataFrameABC
 from .constants import INFERENCE_COLUMNS
 
 

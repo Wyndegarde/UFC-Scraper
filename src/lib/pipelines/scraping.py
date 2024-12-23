@@ -5,14 +5,14 @@ from pathlib import Path
 
 import pandas as pd
 
-from ufc_scraper.data_cleaning import DataCleaner
-from ufc_scraper.scrapers import (
+from src.lib.data_cleaning import DataCleaner
+from src.lib.scrapers import (
     HomepageScraper,
     BoutScraper,
     FighterScraper,
     CardScraper,
 )
-from ufc_scraper.config import PathSettings, console
+from src.config import PathSettings, console
 import asyncio
 
 # console = Console()

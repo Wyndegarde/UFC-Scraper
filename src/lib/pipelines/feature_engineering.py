@@ -1,5 +1,5 @@
-from ufc_scraper.config import PathSettings
-from ufc_scraper.feature_engineering import FeatureEngineering
+from src.config import PathSettings
+from src.lib.feature_engineering import FeatureEngineering
 
 
 class FeatureEngineeringPipeline:
