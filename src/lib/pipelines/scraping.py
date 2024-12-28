@@ -153,11 +153,6 @@ class ScrapingPipeline:
         )
 
         filtered_event_links: List[str] = await homepage.scrape_url()
-        # total_events: int = len(filtered_event_links)
-
-        # if (index % 10 == 0) or (total_events - index <= 10):
-        #     homepage.write_cache()
-        #     raw_data_processor.write_csv()
 
         tasks = []
         batch = []
@@ -181,10 +176,6 @@ class ScrapingPipeline:
                         self.scrape_card_task(link, homepage, raw_data_processor)
                     )
                 )
-
-            # if (index % 10 == 0) or (total_events - index <= 10):
-            #     homepage.write_cache()
-            #     raw_data_processor.write_csv()
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
         for result in results:

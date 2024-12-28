@@ -1,8 +1,8 @@
-from ufc_scraper.pipelines import ScrapingPipeline, DataCleaningPipeline
-from ufc_scraper.feature_engineering import FeatureEngineering
-from ufc_scraper.config import PathSettings
-
 import asyncio
+
+from src.lib.pipelines import ScrapingPipeline, DataCleaningPipeline
+from src.lib.feature_engineering import FeatureEngineering
+from src.config import PathSettings
 
 
 async def main():
