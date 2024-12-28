@@ -22,6 +22,12 @@ class FighterScraper(ScraperABC):
         # self.fighter = self._get_soup()
         self.prefix = self.red_prefix if red_corner else self.blue_prefix
 
+    async def scrape_url(self) -> Dict[str, str]:
+        fighter = await self._aget_soup()
+        fighter_profile: Dict[str, str] = self._extract_fighter_details(fighter)
+
+        return fighter_profile
+
     def _extract_fighter_record(self, fighter) -> List[str]:
         # First find their record.
         record = fighter.find(class_="b-content__title-record")
@@ -64,10 +70,4 @@ class FighterScraper(ScraperABC):
             self.prefix + entry[0]: entry[1] for entry in all_info if len(entry) == 2
         }
         fighter_profile[self.prefix + "record"] = cleaned_record[1]
-        return fighter_profile
-
-    async def scrape_url(self) -> Dict[str, str]:
-        fighter = await self._aget_soup()
-        fighter_profile: Dict[str, str] = self._extract_fighter_details(fighter)
-
         return fighter_profile

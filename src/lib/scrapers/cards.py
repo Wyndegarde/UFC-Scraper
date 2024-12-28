@@ -16,6 +16,20 @@ class CardScraper(ScraperABC):
         super().__init__(url)
         # self.ufc_card = self._get_soup()
 
+    async def scrape_url(self) -> Tuple[str, str, str, List[str]]:
+        """
+        Executes all the logic to get the information about a single event.
+        """
+        ufc_card = await self._aget_soup()
+        logger.info("Getting Event Name")
+        event_name: str = self._extract_event_name(ufc_card)
+        logger.info("Getting Event Details")
+        date, location = self._extract_event_details(ufc_card)
+        logger.info("Getting Fight Links")
+        fight_links: List[str] = self._extract_fight_links(ufc_card)
+
+        return event_name, date, location, fight_links
+
     def _extract_event_name(self, ufc_card) -> str:
         """
         Responsible for extracting the event name of the card.
@@ -59,17 +73,3 @@ class CardScraper(ScraperABC):
                 fight_links.append(link_to_fight)
 
         return fight_links
-
-    async def scrape_url(self) -> Tuple[str, str, str, List[str]]:
-        """
-        Executes all the logic to get the information about a single event.
-        """
-        ufc_card = await self._aget_soup()
-        logger.info("Getting Event Name")
-        event_name: str = self._extract_event_name(ufc_card)
-        logger.info("Getting Event Details")
-        date, location = self._extract_event_details(ufc_card)
-        logger.info("Getting Fight Links")
-        fight_links: List[str] = self._extract_fight_links(ufc_card)
-
-        return event_name, date, location, fight_links

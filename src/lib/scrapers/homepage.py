@@ -18,6 +18,23 @@ class HomepageScraper(ScraperABC):
         self.cache_file_path: Path = cache_file_path
         self.cache = self._get_cache()
 
+    async def scrape_url(self) -> List[str]:
+        links = await self._get_links()
+        return links
+        # return self._get_links()
+        # return ["http://www.ufcstats.com/event-details/3c6976f8182d9527",
+        #         "http://www.ufcstats.com/event-details/51b1e2fd9872005b",
+        #         "http://www.ufcstats.com/event-details/6fb1ba67bef41b37",
+        #         "http://www.ufcstats.com/event-details/15b1b21cd743d652",
+        #         "http://www.ufcstats.com/event-details/3dc3022232b79c7a"]
+
+    def write_cache(self) -> None:
+        """
+        Writes the cache to a json file.
+        """
+        with open(self.cache_file_path, "w") as f:
+            json.dump(self.cache, f)
+
     def _get_cache(self) -> List[str]:
         try:
             # read cache from json file
@@ -45,13 +62,6 @@ class HomepageScraper(ScraperABC):
         ]
 
         return filtered_event_links
-
-    def write_cache(self) -> None:
-        """
-        Writes the cache to a json file.
-        """
-        with open(self.cache_file_path, "w") as f:
-            json.dump(self.cache, f)
 
     async def _get_links(self) -> List[str]:
         """
@@ -92,13 +102,3 @@ class HomepageScraper(ScraperABC):
         next_event_link = landing_page.find_all(class_="b-link b-link_style_white")
         # using find all gets all the links, so we need to get the first one which contains the next event - check.
         return next_event_link[0]["href"]
-
-    async def scrape_url(self) -> List[str]:
-        links = await self._get_links()
-        return links
-        # return self._get_links()
-        # return ["http://www.ufcstats.com/event-details/3c6976f8182d9527",
-        #         "http://www.ufcstats.com/event-details/51b1e2fd9872005b",
-        #         "http://www.ufcstats.com/event-details/6fb1ba67bef41b37",
-        #         "http://www.ufcstats.com/event-details/15b1b21cd743d652",
-        #         "http://www.ufcstats.com/event-details/3dc3022232b79c7a"]
