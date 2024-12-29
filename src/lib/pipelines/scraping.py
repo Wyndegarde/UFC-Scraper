@@ -25,6 +25,119 @@ class ScrapingPipeline:
 
     sem = asyncio.Semaphore(10)  # Limit the number of concurrent tasks
 
+    async def run(self) -> Any:
+        """
+        Executes all the logic from the scrapers and writes the data to the csv files.
+
+        Returns:
+            Any: Still in progress.
+        """
+
+        # Instantiate all data processors required for scraping.
+        raw_data_processor = DataCleaner(
+            csv_path=PathSettings.RAW_DATA_CSV, allow_creation=True
+        )
+
+        # Instantiate the homepage scraper and get all the links to each event.
+        homepage = HomepageScraper(
+            url="http://www.ufcstats.com/statistics/events/completed",
+            cache_file_path=PathSettings.EVENT_CACHE_JSON,
+        )
+
+        filtered_event_links: List[str] = await homepage.scrape_url()
+
+        results = await self._scrape_events(
+            filtered_event_links, homepage, raw_data_processor
+        )
+
+        for result in results:
+            if isinstance(result, Exception):
+                console.log(result)
+        homepage.write_cache()
+        raw_data_processor.write_csv()
+
+    async def scrape_card_task(self, link_to_event, homepage, raw_data_processor):
+        async with self.sem:
+            try:
+                await self._scrape_card(link_to_event, homepage, raw_data_processor)
+            except Exception as e:
+                console.log(f"Failed to scrape {link_to_event}")
+                console.log(e)
+                return
+
+    async def scrape_next_event(self) -> None:
+        # Removes the existing next event (if it exists)
+        existing_future_event = Path(PathSettings.NEXT_EVENT_CSV)
+        existing_future_event.unlink(missing_ok=True)
+
+        # Creates the next event object for cleaning and writing the csv
+        next_event_processor = DataCleaner(
+            csv_path=PathSettings.NEXT_EVENT_CSV, allow_creation=True
+        )
+
+        homepage = HomepageScraper(
+            url="http://www.ufcstats.com/statistics/events/completed",
+            cache_file_path=PathSettings.EVENT_CACHE_JSON,
+        )
+        # Returns the link to the next event - different tag to previous events.
+        next_event_link = await homepage._get_next_event()
+
+        fight_card = CardScraper(next_event_link)
+        event_name, date, location, fight_links = await fight_card.scrape_url()
+
+        fight_links = list(set(fight_links))
+        self._display_event_details(event_name, date, location, fight_links)
+
+        for fight in fight_links:
+            bout = BoutScraper(url=fight, date=date, location=location)
+            fight_ = await bout._aget_soup()
+            fighter_links = bout.get_fighter_links(fight=fight_)
+            fighter_profiles = await self._scrape_fighter_profiles(fighter_links)
+
+            all_info = await bout.extract_future_bout_stats()
+
+            full_fight_details = {**all_info, **fighter_profiles}
+            full_fight_details_df = pd.DataFrame.from_dict(
+                full_fight_details, orient="index"
+            ).T
+        next_event_processor.add_row(full_fight_details_df)
+
+        next_event_processor.clean_next_event()
+        next_event_processor.write_csv()
+
+    async def _scrape_events(
+        self,
+        filtered_event_links: List[str],
+        homepage: HomepageScraper,
+        raw_data_processor: DataCleaner,
+    ) -> List[Any]:
+        tasks = []
+        batch = []
+        batch_size = 10
+        for index, link_to_event in enumerate(filtered_event_links):
+            batch.append(link_to_event)
+            if len(batch) == batch_size:
+                for link in batch:
+                    tasks.append(
+                        asyncio.create_task(
+                            self.scrape_card_task(link, homepage, raw_data_processor)
+                        )
+                    )
+                await asyncio.sleep(1)
+                batch = []
+
+        if batch:
+            for link in batch:
+                tasks.append(
+                    asyncio.create_task(
+                        self.scrape_card_task(link, homepage, raw_data_processor)
+                    )
+                )
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        return results
+
     async def _scrape_fighter_profiles(
         self, fighter_links: List[str]
     ) -> Dict[str, str]:
@@ -132,106 +245,3 @@ class ScrapingPipeline:
         console.rule("", style="black")
         homepage.cache.append(link_to_event)
         console.log(f"Finished scraping {link_to_event}")
-
-    async def run(self) -> Any:
-        """
-        Executes all the logic from the scrapers and writes the data to the csv files.
-
-        Returns:
-            Any: Still in progress.
-        """
-
-        # Instantiate all data processors required for scraping.
-        raw_data_processor = DataCleaner(
-            csv_path=PathSettings.RAW_DATA_CSV, allow_creation=True
-        )
-
-        # Instantiate the homepage scraper and get all the links to each event.
-        homepage = HomepageScraper(
-            url="http://www.ufcstats.com/statistics/events/completed",
-            cache_file_path=PathSettings.EVENT_CACHE_JSON,
-        )
-
-        filtered_event_links: List[str] = await homepage.scrape_url()
-
-        tasks = []
-        batch = []
-        batch_size = 10
-        for index, link_to_event in enumerate(filtered_event_links):
-            batch.append(link_to_event)
-            if len(batch) == batch_size:
-                for link in batch:
-                    tasks.append(
-                        asyncio.create_task(
-                            self.scrape_card_task(link, homepage, raw_data_processor)
-                        )
-                    )
-                await asyncio.sleep(1)
-                batch = []
-
-        if batch:
-            for link in batch:
-                tasks.append(
-                    asyncio.create_task(
-                        self.scrape_card_task(link, homepage, raw_data_processor)
-                    )
-                )
-
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        for result in results:
-            if isinstance(result, Exception):
-                console.log(result)
-        homepage.write_cache()
-        raw_data_processor.write_csv()
-
-    async def scrape_card_task(self, link_to_event, homepage, raw_data_processor):
-        async with self.sem:
-            try:
-                await self._scrape_card(link_to_event, homepage, raw_data_processor)
-            except Exception as e:
-                console.log(f"Failed to scrape {link_to_event}")
-                console.log(e)
-                return
-
-    async def scrape_next_event(self) -> None:
-        # Removes the existing next event (if it exists)
-        existing_future_event = Path(PathSettings.NEXT_EVENT_CSV)
-        existing_future_event.unlink(missing_ok=True)
-
-        # Creates the next event object for cleaning and writing the csv
-        next_event_processor = DataCleaner(
-            csv_path=PathSettings.NEXT_EVENT_CSV, allow_creation=True
-        )
-
-        homepage = HomepageScraper(
-            url="http://www.ufcstats.com/statistics/events/completed",
-            cache_file_path=PathSettings.EVENT_CACHE_JSON,
-        )
-        # Returns the link to the next event - different tag to previous events.
-        next_event_link = await homepage._get_next_event()
-
-        fight_card = CardScraper(next_event_link)
-        event_name, date, location, fight_links = await fight_card.scrape_url()
-
-        fight_links = list(set(fight_links))
-        self._display_event_details(event_name, date, location, fight_links)
-
-        for fight in fight_links:
-            bout = BoutScraper(url=fight, date=date, location=location)
-            fight_ = await bout._aget_soup()
-            fighter_links = bout.get_fighter_links(fight=fight_)
-            fighter_profiles = await self._scrape_fighter_profiles(fighter_links)
-
-            all_info = await bout.extract_future_bout_stats()
-
-            full_fight_details = {**all_info, **fighter_profiles}
-            full_fight_details_df = pd.DataFrame.from_dict(
-                full_fight_details, orient="index"
-            ).T
-        next_event_processor.add_row(full_fight_details_df)
-
-        next_event_processor.clean_next_event()
-        next_event_processor.write_csv()
-
-    def trim_columns(self):
-        ...
