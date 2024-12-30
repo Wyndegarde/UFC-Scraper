@@ -1,7 +1,6 @@
+import asyncio
 from typing import Dict, Any, List
 from pathlib import Path
-
-# from rich.progress import Progress, TimeElapsedColumn
 
 import pandas as pd
 
@@ -13,9 +12,8 @@ from src.lib.scrapers import (
     CardScraper,
 )
 from src.config import PathSettings, console
-import asyncio
 
-# console = Console()
+from src.utils.utils import get_cache, write_cache
 
 
 class ScrapingPipeline:
@@ -23,7 +21,11 @@ class ScrapingPipeline:
     Runs the pipeline to scrape the UFC stats data
     """
 
-    sem = asyncio.Semaphore(10)  # Limit the number of concurrent tasks
+    # Limit the number of concurrent tasks
+    sem = asyncio.Semaphore(10)
+
+    def __init__(self, data_processor: DataCleaner) -> None:
+        self.data_processor = data_processor
 
     async def run(self) -> Any:
         """
@@ -37,11 +39,11 @@ class ScrapingPipeline:
         raw_data_processor = DataCleaner(
             csv_path=PathSettings.RAW_DATA_CSV, allow_creation=True
         )
-
+        cache = get_cache(PathSettings.EVENT_CACHE_JSON)
         # Instantiate the homepage scraper and get all the links to each event.
         homepage = HomepageScraper(
             url="http://www.ufcstats.com/statistics/events/completed",
-            cache_file_path=PathSettings.EVENT_CACHE_JSON,
+            cache=cache,
         )
 
         filtered_event_links: List[str] = await homepage.scrape_url()
@@ -53,7 +55,8 @@ class ScrapingPipeline:
         for result in results:
             if isinstance(result, Exception):
                 console.log(result)
-        homepage.write_cache()
+
+        write_cache(PathSettings.EVENT_CACHE_JSON, homepage.cache)
         raw_data_processor.write_csv()
 
     async def scrape_card_task(self, link_to_event, homepage, raw_data_processor):
@@ -75,9 +78,10 @@ class ScrapingPipeline:
             csv_path=PathSettings.NEXT_EVENT_CSV, allow_creation=True
         )
 
+        cache = get_cache(PathSettings.EVENT_CACHE_JSON)
         homepage = HomepageScraper(
             url="http://www.ufcstats.com/statistics/events/completed",
-            cache_file_path=PathSettings.EVENT_CACHE_JSON,
+            cache=cache,
         )
         # Returns the link to the next event - different tag to previous events.
         next_event_link = await homepage._get_next_event()
@@ -223,16 +227,6 @@ class ScrapingPipeline:
         event_name, date, location, fight_links = await fight_card.scrape_url()
 
         self._display_event_details(event_name, date, location, fight_links)
-
-        # Set up Rich progress bar.
-        # with Progress(
-        #     *Progress.get_default_columns(),
-        #     TimeElapsedColumn(),
-        #     speed_estimate_period=5.0,
-        # ) as progress:
-        #     fight_task = progress.add_task(
-        #         "[red]Scraping Fights...", total=len(fight_links)
-        #     )
 
         # Iterate through each fight on the card and scrape the data.
         for fight in fight_links:

@@ -1,8 +1,7 @@
 """
 Module responsible for scraping the details for each event.
 """
-import json
-from pathlib import Path
+from __future__ import annotations
 from typing import List
 
 from .abstract import ScraperABC
@@ -13,10 +12,9 @@ class HomepageScraper(ScraperABC):
     Class to scrape the homepage. Will get all the links for each event.
     """
 
-    def __init__(self, url: str, cache_file_path: Path) -> None:
+    def __init__(self, url: str, cache: List[str]) -> None:
         super().__init__(url)
-        self.cache_file_path: Path = cache_file_path
-        self.cache = self._get_cache()
+        self.cache: List[str] = cache
 
     async def scrape_url(self) -> List[str]:
         links = await self._get_links()
@@ -27,23 +25,6 @@ class HomepageScraper(ScraperABC):
         #         "http://www.ufcstats.com/event-details/6fb1ba67bef41b37",
         #         "http://www.ufcstats.com/event-details/15b1b21cd743d652",
         #         "http://www.ufcstats.com/event-details/3dc3022232b79c7a"]
-
-    def write_cache(self) -> None:
-        """
-        Writes the cache to a json file.
-        """
-        with open(self.cache_file_path, "w") as f:
-            json.dump(self.cache, f)
-
-    def _get_cache(self) -> List[str]:
-        try:
-            # read cache from json file
-            with open(self.cache_file_path, "r") as f:
-                cache = json.load(f)
-            return cache
-        except FileNotFoundError:
-            # create cache
-            return []
 
     def _filter_event_links(self, event_links: List[str]) -> List[str]:
         """
