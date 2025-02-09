@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 
-from ufc_scraper.config import PathSettings
-from ufc_scraper.scrapers import FighterScraper
+from src.config import PathSettings
+from src.lib.scrapers import FighterScraper
 
 
 #! This is a temp implementation for now, just to learn monkeypatching.

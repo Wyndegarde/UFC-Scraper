@@ -1,5 +1,5 @@
-from ufc_scraper.pipelines import ScrapingPipeline
-from ufc_scraper.config import PathSettings
+from src.lib.pipelines import ScrapingPipeline
+from src.config import PathSettings
 import asyncio
 
 

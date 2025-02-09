@@ -1,5 +1,5 @@
-from ufc_scraper.modelling import Training, Inference
-from ufc_scraper.config import PathSettings
+from src.lib.modelling import Training, Inference
+from src.config import PathSettings
 
 
 def main():
