@@ -11,7 +11,7 @@ from typing import List
 
 class CacheABC(ABC):
     @abstractmethod
-    def get(self, *args, **kwargs):
+    def get(self, *args, **kwargs) -> List[str]:
         pass
 
     @abstractmethod

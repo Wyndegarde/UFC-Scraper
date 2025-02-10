@@ -16,8 +16,6 @@ from src.lib.scrapers import (
 )
 from src.config import PathSettings, console
 
-from src.utils.utils import get_cache, write_cache
-
 
 class ScrapingPipeline:
     """
@@ -36,7 +34,7 @@ class ScrapingPipeline:
         Executes all the logic from the scrapers and writes the data to the csv files.
         """
 
-        cached_event_links = self.cache.get()
+        cached_event_links: List[str] = self.cache.get()
 
         # Instantiate the homepage scraper and get all the links to each event.
         homepage = HomepageScraper(
@@ -65,6 +63,10 @@ class ScrapingPipeline:
         homepage: HomepageScraper,
         raw_data_processor: ProcessingHandlerABC,
     ) -> List[Any]:
+        """
+        Asynchronously scrapes the events in batches of 10.
+        Creates a task for each event and adds it to the list of tasks.
+        """
         tasks = []
         batch = []
         batch_size = 10
@@ -77,6 +79,7 @@ class ScrapingPipeline:
                             self.scrape_card_task(link, homepage, raw_data_processor)
                         )
                     )
+                # Sleep for 1 second to avoid rate limiting
                 await asyncio.sleep(1)
                 batch = []
 
@@ -92,11 +95,16 @@ class ScrapingPipeline:
 
         return results
 
-    async def scrape_card_task(self, link_to_event, homepage, raw_data_processor):
+    async def scrape_card_task(
+        self,
+        link_to_event: str,
+        homepage: HomepageScraper,
+        raw_data_processor: ProcessingHandlerABC,
+    ) -> None:
         async with self.sem:
             try:
-                full_fight_details = await self.scraping_engine.scrape_card(
-                    link_to_event, homepage
+                full_fight_details: Dict[str, str] = (
+                    await self.scraping_engine.scrape_card(link_to_event, homepage)
                 )
                 raw_data_processor.add_row(full_fight_details)
             except Exception as e:
@@ -114,7 +122,7 @@ class ScrapingPipeline:
             csv_path=PathSettings.NEXT_EVENT_CSV, allow_creation=True
         )
 
-        cache = get_cache(PathSettings.EVENT_CACHE_JSON)
+        cache = self.cache.get()
         homepage = HomepageScraper(
             url="http://www.ufcstats.com/statistics/events/completed",
             cache=cache,

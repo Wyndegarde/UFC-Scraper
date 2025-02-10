@@ -50,8 +50,6 @@ class HomepageScraper(ScraperABC):
         Method to get all the links from the homepage across all pages
         """
 
-        #! Placeholder. Need to dynamically get the number of pages.
-        # home_page = self._get_soup()
         home_page = await self._aget_soup()
 
         # homepage lists the total number of pages at the bottom. Get the last page number to iterate through all events
