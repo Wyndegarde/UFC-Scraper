@@ -15,6 +15,8 @@ from src.lib.scrapers import (
 )
 from src.config import PathSettings, console
 
+from .constants import UFC_HOMEPAGE_URL
+
 
 class ScrapingPipeline:
     """
@@ -30,17 +32,18 @@ class ScrapingPipeline:
 
     async def run(self, raw_data_processor: ProcessingHandlerABC) -> None:
         """
-        Executes all the logic from the scrapers and writes the data to the csv files.
+        Executes all the logic from the scrapers and writes the data to the chosen data store.
         """
 
         cached_event_links: List[str] = self.cache.get()
 
         # Instantiate the homepage scraper and get all the links to each event.
         homepage = HomepageScraper(
-            url="http://www.ufcstats.com/statistics/events/completed",
+            url=UFC_HOMEPAGE_URL,
             cache=cached_event_links,
         )
 
+        # Scrape only events that are not in the cache.
         filtered_event_links: List[str] = await homepage.scrape_url()
 
         results = await self._scrape_events(
@@ -82,6 +85,7 @@ class ScrapingPipeline:
                 await asyncio.sleep(1)
                 batch = []
 
+        # Scrape any remaining events.
         if batch:
             for link in batch:
                 tasks.append(
@@ -122,7 +126,7 @@ class ScrapingPipeline:
 
         cache = self.cache.get()
         homepage = HomepageScraper(
-            url="http://www.ufcstats.com/statistics/events/completed",
+            url=UFC_HOMEPAGE_URL,
             cache=cache,
         )
         # Returns the link to the next event - different tag to previous events.
