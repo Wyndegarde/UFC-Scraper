@@ -4,8 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.lib.data_cleaning import DataCleaner
-from src.lib.engines import ScrapingEngine
+from src.lib.engines import ScrapingEngine, DataCleaningEngine
 from src.lib.exceptions import ScrapingException
 from src.lib.processing import ProcessingHandlerABC
 from src.lib.processing.cache import CacheABC
@@ -117,7 +116,7 @@ class ScrapingPipeline:
         existing_future_event.unlink(missing_ok=True)
 
         # Creates the next event object for cleaning and writing the csv
-        next_event_processor = DataCleaner(
+        next_event_processor = DataCleaningEngine(
             csv_path=PathSettings.NEXT_EVENT_CSV, allow_creation=True
         )
 
