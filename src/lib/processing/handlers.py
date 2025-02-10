@@ -32,7 +32,7 @@ class ProcessingHandlerABC(ABC):
 class CSVProcessingHandler(ProcessingHandlerABC):
     def __init__(self, csv_path: Path, allow_creation: bool = False):
         self.csv_path = csv_path
-        self.df = pd.DataFrame()
+        self.df: pd.DataFrame = self.instantiate()
         self.allow_creation = allow_creation
 
     def instantiate(self) -> pd.DataFrame:
