@@ -33,6 +33,7 @@ ALLOWED_HOSTS: list[str] = []
 INSTALLED_APPS: list[str] = [
     "src.apps.scraper",
     "src.apps.preprocessing",
+    "src.apps.predictor",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

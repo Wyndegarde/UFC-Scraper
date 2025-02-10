@@ -22,4 +22,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("scraper/", include("src.apps.scraper.urls")),
     path("preprocessing/", include("src.apps.preprocessing.urls")),
+    path("predictor/", include("src.apps.predictor.urls")),
 ]
