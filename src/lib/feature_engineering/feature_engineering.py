@@ -74,35 +74,28 @@ class FeatureEngineering(CSVProcessingHandler):
 
     def _fit_models(self) -> Dict[str, RegressionModel]:
         """
-        Method to create the linear regression models that will predict what our missing values should be.
-
-
+        Method to create the linear regression models that will predict missing values.
         Returns:
-            RegressionModel: Custom Class that makes it a bit easier to work with the statsmodels package.
+            Dict[str, RegressionModel]: Dictionary of trained regression models for each stat type.
         """
-        # DF containing the X and Y columns for each stat.
         XYs_only = self._build_regression_df()
 
-        # All the models are created here.
-        sig_strike_model = RegressionModel(
-            XYs_only, "X_sig_str_percent", "Y_sig_str_percent"
-        )
-        takedowns_model = RegressionModel(XYs_only, "X_td_percent", "Y_td_percent")
-        sig_strike_defence_model = RegressionModel(
-            XYs_only, "X_sig_strike_defence_percent", "Y_sig_strike_defence_percent"
-        )
-        takedowns_defence_model = RegressionModel(
-            XYs_only, "X_td_defence_percent", "Y_td_defence_percent"
-        )
-        # Store them in a dictionary for easy access.
-        models = {
-            "sig_strike": sig_strike_model,
-            "takedowns": takedowns_model,
-            "sig_strike_defence": sig_strike_defence_model,
-            "takedowns_defence": takedowns_defence_model,
+        # Define model configurations
+        model_configs = {
+            "sig_strike": ("X_sig_str_percent", "Y_sig_str_percent"),
+            "takedowns": ("X_td_percent", "Y_td_percent"),
+            "sig_strike_defence": (
+                "X_sig_strike_defence_percent",
+                "Y_sig_strike_defence_percent",
+            ),
+            "takedowns_defence": ("X_td_defence_percent", "Y_td_defence_percent"),
         }
 
-        return models
+        # Create models using configuration
+        return {
+            name: RegressionModel(XYs_only, x_col, y_col)
+            for name, (x_col, y_col) in model_configs.items()
+        }
 
     def _populate_averages_cols(
         self, fighter_stats_df: pd.DataFrame, fighter_name: str
@@ -130,67 +123,51 @@ class FeatureEngineering(CSVProcessingHandler):
         self, fighter_stats_df: pd.DataFrame, col_name: str, model: RegressionModel
     ) -> pd.DataFrame:
         """
-        Generates a prediction for a missing value and adds it to the fighters dataframe.
-        Uses the trained model for that stat.
+        Generates and adds a prediction for a missing value using the trained model.
+
         Args:
-            fighter_stats_df (pd.DataFrame): The dataframe containing the average stats for a given fighter.
-            col_name (str): Name of the column to fill in.
-            model (RegressionModel): The trained model to use for the prediction.
+            fighter_stats_df: DataFrame containing fighter's average stats
+            col_name: Name of the column to fill
+            model: Trained regression model for prediction
 
         Returns:
-            pd.DataFrame: The input df but with the missing value filled in.
+            DataFrame with the missing value filled
         """
-        # returns the predicted value.
-        prediction = model.predict(
-            fighter_stats_df.at[fighter_stats_df.index[1], col_name]
-        )
-        # Adds the predicted value to the dataframe.
+        first_valid_stat = fighter_stats_df.at[fighter_stats_df.index[1], col_name]
+        prediction = model.predict(first_valid_stat)
         fighter_stats_df.at[fighter_stats_df.index[0], col_name] = prediction
         return fighter_stats_df
 
     def run_feature_engineering(self) -> None:
         """
-        Method which executes the feature engineering.
+        Executes the feature engineering process by filling missing values and updating the main DataFrame.
         """
-        # Contains all trained models for filling in missing values.
         models: Dict[str, RegressionModel] = self._fit_models()
 
+        # Define stat columns and their corresponding models
+        stat_model_mapping = {
+            "sig_str_average": "sig_strike",
+            "td_average": "takedowns",
+            "sig_strike_defence_average": "sig_strike_defence",
+            "td_defence_average": "takedowns_defence",
+        }
+
         for fighter_name in self.fighters:
-            # Gets each fighter and orders their fights, earliest to most recent.
             fighter = Fighter(self.df, fighter_name)
 
-            # Fighter needs to have had at least 2 fights in order to fill in missing values.
-            if len(fighter.fighter_df) > 1:
-                # Gets the fighters stats in chronological order (as a fighter can be in both the red and blue corner)
-                all_stats: DefaultDict[str, List[float]] = fighter.order_fighter_stats(
-                    self.percent_stats
-                )
-                # Creates a dataframe containing the average stats for a given fighter.
-                # but with the stats for their first fight in the UFC missing.
-                fighter_stats_df: pd.DataFrame = fighter.setup_missing_val_df(all_stats)
+            if len(fighter.fighter_df) <= 1:
+                continue
 
-                # ? There's probably a better way to do this
-                # Using the trained model, predict what the stats for their first fight should be.
+            all_stats = fighter.order_fighter_stats(self.percent_stats)
+            fighter_stats_df = fighter.setup_missing_val_df(all_stats)
+
+            # Fill missing values for each stat using corresponding model
+            for stat_col, model_name in stat_model_mapping.items():
                 fighter_stats_df = self.fill_missing_value(
-                    fighter_stats_df, "sig_str_average", models["sig_strike"]
-                )
-                fighter_stats_df = self.fill_missing_value(
-                    fighter_stats_df, "td_average", models["takedowns"]
-                )
-                fighter_stats_df = self.fill_missing_value(
-                    fighter_stats_df,
-                    "sig_strike_defence_average",
-                    models["sig_strike_defence"],
-                )
-                fighter_stats_df = self.fill_missing_value(
-                    fighter_stats_df, "td_defence_average", models["takedowns_defence"]
+                    fighter_stats_df, stat_col, models[model_name]
                 )
 
-                fighter_stats_df = fighter_stats_df.drop(
-                    columns=self.percent_stats, axis=1
-                )
-                # Add these averages to the main dataframe iteratively by fighter.
-                self._populate_averages_cols(fighter_stats_df, fighter_name)
+            fighter_stats_df = fighter_stats_df.drop(columns=self.percent_stats, axis=1)
+            self._populate_averages_cols(fighter_stats_df, fighter_name)
 
-        # Save the dataframe to a csv.
         self.df.to_csv(PathSettings.TRAINING_DATA_CSV, index=False)

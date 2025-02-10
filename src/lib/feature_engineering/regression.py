@@ -25,10 +25,15 @@ class RegressionModel:
         else:
             print(f"R-squared adjusted is {r_squared_adj} which is greater than 0.3.")
 
-    def predict(self, input_stat: float):
-        #! Need refresher on what to set the constant to.
-        constant: int = 0
-        # input requires both the constant and the x value.
-        x_test = np.array([constant, input_stat])
-        # first value in returned array is the prediction (mean value in the CI).
+    def predict(self, input_stat: float) -> float:
+        """
+        Predicts the target value using the trained model.
+
+        Args:
+            input_stat: The input statistic to predict from
+
+        Returns:
+            float: The predicted value
+        """
+        x_test = np.array([1, input_stat])  # 1 is the constant term for statsmodels
         return self.model.get_prediction(x_test).predicted[0]
