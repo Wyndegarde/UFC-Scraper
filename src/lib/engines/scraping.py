@@ -2,6 +2,7 @@ from typing import List, Dict
 from rich.console import Console
 
 from src.lib.exceptions import ScrapingException
+from src.lib.processing.handlers import ProcessingHandlerABC
 from src.lib.scrapers import CardScraper, BoutScraper, FighterScraper
 
 console = Console()
@@ -18,7 +19,12 @@ class ScrapingEngine:
             console.log(e)
             raise e
 
-    async def scrape_card(self, link_to_event, homepage):
+    async def scrape_card(
+        self,
+        link_to_event,
+        homepage,
+        raw_data_processor: ProcessingHandlerABC,
+    ):
         # Instantiate the card scraper and get the event details.
         fight_card = CardScraper(link_to_event)
         event_name, date, location, fight_links = await fight_card.scrape_url()
@@ -26,10 +32,11 @@ class ScrapingEngine:
         self._display_event_details(event_name, date, location, fight_links)
 
         # Iterate through each fight on the card and scrape the data.
+
         for fight in fight_links:
             try:
                 full_fight_details = await self.scrape_fight(fight, date, location)
-                return full_fight_details
+                raw_data_processor.add_row(full_fight_details)
             except Exception:
                 raise ScrapingException(f"Failed to scrape {fight}")
 

@@ -103,10 +103,9 @@ class ScrapingPipeline:
     ) -> None:
         async with self.sem:
             try:
-                full_fight_details: Dict[str, str] = (
-                    await self.scraping_engine.scrape_card(link_to_event, homepage)
+                await self.scraping_engine.scrape_card(
+                    link_to_event, homepage, raw_data_processor
                 )
-                raw_data_processor.add_row(full_fight_details)
             except Exception as e:
                 console.log(f"Failed to scrape {link_to_event}")
                 console.log(e)
