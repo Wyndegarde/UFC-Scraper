@@ -1,6 +1,7 @@
 """
 Module responsible for cleaning the raw data scraped from the web.
 """
+
 from datetime import datetime
 import re
 from typing import List

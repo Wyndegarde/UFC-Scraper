@@ -1,6 +1,7 @@
 """
 Module to get the information for each bout on a card.
 """
+
 import re
 from typing import List, Dict, Tuple
 

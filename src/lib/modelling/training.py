@@ -4,6 +4,7 @@ Very basic just to have some form of output but nothing that works with any degr
 Same with Inference.py
 
 """
+
 from datetime import datetime
 from joblib import dump
 from pathlib import Path

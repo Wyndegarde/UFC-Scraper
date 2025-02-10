@@ -40,7 +40,7 @@ test = [
 
 
 [tool.ruff]
-extend-ignore = ["E501", "F401"]
+lint.extend-ignore = ["E501", "F401"]
 exclude = ["*/__init__.py"]
 line-length = 88
 target-version = "py313"

@@ -1,6 +1,7 @@
 """
 Module responsible for scraping the details for each event.
 """
+
 from __future__ import annotations
 from typing import List
 

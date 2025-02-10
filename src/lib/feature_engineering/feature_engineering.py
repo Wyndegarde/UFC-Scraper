@@ -59,9 +59,9 @@ class FeatureEngineering(DataFrameABC):
             # Can only create a fighters regression df if they have had at least 3 fights.
             if len(fighter.fighter_df) >= 3:
                 # Gets the fighters stats in chronological order (as a fighter can be in both the red and blue corner)
-                ordered_stats: DefaultDict[
-                    str, List[float]
-                ] = fighter.order_fighter_stats(self.percent_stats)
+                ordered_stats: DefaultDict[str, List[float]] = (
+                    fighter.order_fighter_stats(self.percent_stats)
+                )
 
                 # Manipulate the ordered stats to create the X and Y columns for each stat.
                 fighter_lin_reg_df = fighter.create_fighter_reg_df(ordered_stats)

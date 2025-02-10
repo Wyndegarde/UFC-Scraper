@@ -23,8 +23,7 @@ class Fighter:
             | (self.full_ufc_df["blue_fighter"] == self.fighter_name)
         ].sort_values(by="date", ascending=True)
 
-    def populate_fighter_df(self):
-        ...
+    def populate_fighter_df(self): ...
 
     def order_fighter_stats(
         self, stat_cols: List[str]

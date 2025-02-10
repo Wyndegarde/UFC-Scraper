@@ -1,12 +1,12 @@
 """
 Module for scraping the information for each fighter from their stats page.
 """
+
 from typing import Dict, List
 from .abstract import ScraperABC
 
 
 class FighterScraper(ScraperABC):
-
     """
     Class to scrape the information for each fighter from their stats page.
     """

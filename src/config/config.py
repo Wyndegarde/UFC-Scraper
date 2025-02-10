@@ -1,6 +1,7 @@
 """
 Script to store all the configuration variables
 """
+
 from pathlib import Path
 import logging
 from rich.console import Console

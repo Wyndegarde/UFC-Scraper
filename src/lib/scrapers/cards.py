@@ -1,6 +1,7 @@
 """
 Class to scrape a single event.
 """
+
 from typing import List, Tuple
 
 from .abstract import ScraperABC
