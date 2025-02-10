@@ -7,10 +7,10 @@ import pandas as pd
 from src.lib.data_cleaning import DataCleaner
 from src.lib.engines import ScrapingEngine
 from src.lib.exceptions import ScrapingException
+from src.lib.processing import CSVProcessingHandler, ProcessingHandlerABC
 from src.lib.scrapers import (
     HomepageScraper,
     BoutScraper,
-    FighterScraper,
     CardScraper,
 )
 from src.config import PathSettings, console
@@ -29,7 +29,7 @@ class ScrapingPipeline:
     def __init__(self, scraping_engine: ScrapingEngine) -> None:
         self.scraping_engine = scraping_engine
 
-    async def run(self) -> Any:
+    async def run(self, raw_data_processor: ProcessingHandlerABC) -> Any:
         """
         Executes all the logic from the scrapers and writes the data to the csv files.
 
@@ -38,9 +38,9 @@ class ScrapingPipeline:
         """
 
         # Instantiate all data processors required for scraping.
-        raw_data_processor = DataCleaner(
-            csv_path=PathSettings.RAW_DATA_CSV, allow_creation=True
-        )
+        # raw_data_processor = DataCleaner(
+        #     csv_path=PathSettings.RAW_DATA_CSV, allow_creation=True
+        # )
         cache = get_cache(PathSettings.EVENT_CACHE_JSON)
         # Instantiate the homepage scraper and get all the links to each event.
         homepage = HomepageScraper(
@@ -53,6 +53,7 @@ class ScrapingPipeline:
         results = await self._scrape_events(
             filtered_event_links,
             homepage,
+            raw_data_processor,
         )
 
         for result in results:
@@ -60,7 +61,52 @@ class ScrapingPipeline:
                 console.log(result)
 
         write_cache(PathSettings.EVENT_CACHE_JSON, homepage.cache)
-        raw_data_processor.write_csv()
+        raw_data_processor.write()
+
+    async def _scrape_events(
+        self,
+        filtered_event_links: List[str],
+        homepage: HomepageScraper,
+        raw_data_processor: ProcessingHandlerABC,
+    ) -> List[Any]:
+        tasks = []
+        batch = []
+        batch_size = 10
+        for link_to_event in filtered_event_links:
+            batch.append(link_to_event)
+            if len(batch) == batch_size:
+                for link in batch:
+                    tasks.append(
+                        asyncio.create_task(
+                            self.scrape_card_task(link, homepage, raw_data_processor)
+                        )
+                    )
+                await asyncio.sleep(1)
+                batch = []
+
+        if batch:
+            for link in batch:
+                tasks.append(
+                    asyncio.create_task(
+                        self.scrape_card_task(link, homepage, raw_data_processor)
+                    )
+                )
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        return results
+
+    async def scrape_card_task(self, link_to_event, homepage, raw_data_processor):
+        async with self.sem:
+            try:
+                full_fight_details = await self.scraping_engine.scrape_card(
+                    link_to_event, homepage
+                )
+                raw_data_processor.add_row(full_fight_details)
+            except Exception as e:
+                console.log(f"Failed to scrape {link_to_event}")
+                console.log(e)
+                raise ScrapingException(f"Failed to scrape {link_to_event}")
 
     async def scrape_next_event(self) -> None:
         # Removes the existing next event (if it exists)
@@ -104,41 +150,3 @@ class ScrapingPipeline:
 
         next_event_processor.clean_next_event()
         next_event_processor.write_csv()
-
-    async def _scrape_events(
-        self,
-        filtered_event_links: List[str],
-        homepage: HomepageScraper,
-    ) -> List[Any]:
-        tasks = []
-        batch = []
-        batch_size = 10
-        for _, link_to_event in enumerate(filtered_event_links):
-            batch.append(link_to_event)
-            if len(batch) == batch_size:
-                for link in batch:
-                    tasks.append(
-                        asyncio.create_task(self.scrape_card_task(link, homepage))
-                    )
-                await asyncio.sleep(1)
-                batch = []
-
-        if batch:
-            for link in batch:
-                tasks.append(asyncio.create_task(self.scrape_card_task(link, homepage)))
-
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        return results
-
-    async def scrape_card_task(self, link_to_event, homepage):
-        async with self.sem:
-            try:
-                full_fight_details = await self.scraping_engine.scrape_card(
-                    link_to_event, homepage
-                )
-                return full_fight_details
-            except Exception as e:
-                console.log(f"Failed to scrape {link_to_event}")
-                console.log(e)
-                return

@@ -52,14 +52,6 @@ class ScrapingEngine:
             **full_bout_details,
             **fighter_profiles,
         }
-
-        # full_fight_details_df = pd.DataFrame.from_dict(
-        #     full_fight_details, orient="index"
-        # ).T
-
-        # Adds the row to the dataframe containing all fights.
-        # raw_data_processor.add_row(full_fight_details_df)
-
         return full_fight_details
 
     def _display_event_details(
