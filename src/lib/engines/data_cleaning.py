@@ -19,7 +19,7 @@ class DataCleaningEngine(CSVProcessingHandler):
     Reads in the raw data scraped from the web and cleans it.
 
     Args:
-        DataFrameABC: Base class containing shared functionality for all dataframes.
+        CSVProcessingHandler: Class containing functionality for all csv data.
     """
 
     def __init__(self, csv_path: Path, allow_creation: bool = False) -> None:

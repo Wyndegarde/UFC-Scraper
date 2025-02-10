@@ -15,12 +15,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 
 
-from src.lib.abstract import DataFrameABC
+from src.lib.processing import CSVProcessingHandler
 from src.config import PathSettings
 from .constants import TRAINING_COLUMNS
 
 
-class Training(DataFrameABC):
+class Training(CSVProcessingHandler):
+
     def __init__(self, csv_path: Path, allow_creation: bool = False) -> None:
         super().__init__(csv_path, allow_creation)
         self.experiment = self._setup_experiment()
@@ -34,31 +35,23 @@ class Training(DataFrameABC):
         return experiment
 
     def _prepare_data(self):
-        self.object_df = self.object_df[
-            (self.object_df.winner != "NC") & (self.object_df.winner != "D")
-        ]
+        self.df = self.df[(self.df.winner != "NC") & (self.df.winner != "D")]
 
-        self.object_df = self.object_df.dropna()
-        print(self.object_df.columns)
-        self.object_df = self.object_df[TRAINING_COLUMNS]
+        self.df = self.df.dropna()
+        print(self.df.columns)
+        self.df = self.df[TRAINING_COLUMNS]
 
         # one hot encode winner column
         winner_encoder = OrdinalEncoder()
-        self.object_df["outcome"] = winner_encoder.fit_transform(
-            self.object_df[["winner"]]
-        )
+        self.df["outcome"] = winner_encoder.fit_transform(self.df[["winner"]])
 
         # Drop winner column
-        self.object_df = self.object_df.drop(columns=["winner"])
+        self.df = self.df.drop(columns=["winner"])
 
         # one hot encode stance columns
         stance_encoder = OrdinalEncoder()
-        self.object_df["red_stance"] = stance_encoder.fit_transform(
-            self.object_df[["red_stance"]]
-        )
-        self.object_df["blue_stance"] = stance_encoder.fit_transform(
-            self.object_df[["blue_stance"]]
-        )
+        self.df["red_stance"] = stance_encoder.fit_transform(self.df[["red_stance"]])
+        self.df["blue_stance"] = stance_encoder.fit_transform(self.df[["blue_stance"]])
 
     def train_model(self):
         self._prepare_data()
@@ -67,9 +60,9 @@ class Training(DataFrameABC):
             experiment_id=self.experiment.experiment_id,
         ):
             mlflow.sklearn.autolog()
-            # print(self.object_df.columns)
-            X = self.object_df.drop(columns=["outcome"], axis=1)
-            y = self.object_df["outcome"]
+            # print(self.df.columns)
+            X = self.df.drop(columns=["outcome"], axis=1)
+            y = self.df["outcome"]
 
             X_train, X_test, y_train, y_test = train_test_split(
                 X, y, test_size=0.2, random_state=42

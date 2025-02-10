@@ -2,19 +2,19 @@ from typing import List, DefaultDict, Dict
 import numpy as np
 import pandas as pd
 
-from src.lib.abstract import DataFrameABC
+from src.lib.processing import CSVProcessingHandler
 from src.config import PathSettings
 from .regression import RegressionModel
 from .fighter import Fighter
 
 
-class FeatureEngineering(DataFrameABC):
+class FeatureEngineering(CSVProcessingHandler):
     def __init__(self, csv_path, allow_creation) -> None:
         super().__init__(csv_path, allow_creation)
         # Returns a list of all unique fighters in the dataframe
         self.fighters = np.unique(
             np.concatenate(
-                [self.object_df["red_fighter"], self.object_df["blue_fighter"]],
+                [self.df["red_fighter"], self.df["blue_fighter"]],
                 axis=None,
             )
         )
@@ -33,7 +33,7 @@ class FeatureEngineering(DataFrameABC):
         # It's easier to work with if we remove the red_ and blue_ prefixes
         percent_stats: List[str] = [
             column.replace("red_", "").replace("blue_", "")
-            for column in self.object_df.columns
+            for column in self.df.columns
             if "percent" in column
         ]
         # Quick way to drop the duplicates - changes the order tho but not important here
@@ -54,7 +54,7 @@ class FeatureEngineering(DataFrameABC):
         regression_df = pd.DataFrame()
         for fighter_name in self.fighters:
             # Fighter object creates a version of the final dataframe for a single fighter.
-            fighter: Fighter = Fighter(self.object_df, fighter_name)
+            fighter: Fighter = Fighter(self.df, fighter_name)
 
             # Can only create a fighters regression df if they have had at least 3 fights.
             if len(fighter.fighter_df) >= 3:
@@ -121,14 +121,10 @@ class FeatureEngineering(DataFrameABC):
         for column in fighter_stats_df.columns:
             # Because the fighter_stats_df is a subset of the main dataframe, the index is shared.
             for i in fighter_stats_df.index:
-                if fighter_name in self.object_df.loc[i, "red_fighter"]:
-                    self.object_df.loc[i, "red_" + column] = fighter_stats_df.loc[
-                        i, column
-                    ]
-                elif fighter_name in self.object_df.loc[i, "blue_fighter"]:
-                    self.object_df.loc[i, "blue_" + column] = fighter_stats_df.loc[
-                        i, column
-                    ]
+                if fighter_name in self.df.loc[i, "red_fighter"]:
+                    self.df.loc[i, "red_" + column] = fighter_stats_df.loc[i, column]
+                elif fighter_name in self.df.loc[i, "blue_fighter"]:
+                    self.df.loc[i, "blue_" + column] = fighter_stats_df.loc[i, column]
 
     def fill_missing_value(
         self, fighter_stats_df: pd.DataFrame, col_name: str, model: RegressionModel
@@ -161,7 +157,7 @@ class FeatureEngineering(DataFrameABC):
 
         for fighter_name in self.fighters:
             # Gets each fighter and orders their fights, earliest to most recent.
-            fighter = Fighter(self.object_df, fighter_name)
+            fighter = Fighter(self.df, fighter_name)
 
             # Fighter needs to have had at least 2 fights in order to fill in missing values.
             if len(fighter.fighter_df) > 1:
@@ -197,4 +193,4 @@ class FeatureEngineering(DataFrameABC):
                 self._populate_averages_cols(fighter_stats_df, fighter_name)
 
         # Save the dataframe to a csv.
-        self.object_df.to_csv(PathSettings.TRAINING_DATA_CSV, index=False)
+        self.df.to_csv(PathSettings.TRAINING_DATA_CSV, index=False)
