@@ -8,4 +8,4 @@ class FeatureEngineeringPipeline:
             csv_path=PathSettings.CLEAN_DATA_CSV, allow_creation=False
         )
 
-        feature_engineering.run_feature_engineering()
+        feature_engineering.run()

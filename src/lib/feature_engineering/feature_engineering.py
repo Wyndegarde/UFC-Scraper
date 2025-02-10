@@ -39,6 +39,40 @@ class FeatureEngineering(CSVProcessingHandler):
         # Quick way to drop the duplicates - changes the order tho but not important here
         return list(set(percent_stats))
 
+    def run(self) -> None:
+        """
+        Executes the feature engineering process by filling missing values and updating the main DataFrame.
+        """
+        models: Dict[str, RegressionModel] = self._fit_models()
+
+        # Define stat columns and their corresponding models
+        stat_model_mapping = {
+            "sig_str_average": "sig_strike",
+            "td_average": "takedowns",
+            "sig_strike_defence_average": "sig_strike_defence",
+            "td_defence_average": "takedowns_defence",
+        }
+
+        for fighter_name in self.fighters:
+            fighter = Fighter(self.df, fighter_name)
+
+            if len(fighter.fighter_df) <= 1:
+                continue
+
+            all_stats = fighter.order_fighter_stats(self.percent_stats)
+            fighter_stats_df = fighter.setup_missing_val_df(all_stats)
+
+            # Fill missing values for each stat using corresponding model
+            for stat_col, model_name in stat_model_mapping.items():
+                fighter_stats_df = self.fill_missing_value(
+                    fighter_stats_df, stat_col, models[model_name]
+                )
+
+            fighter_stats_df = fighter_stats_df.drop(columns=self.percent_stats, axis=1)
+            self._populate_averages_cols(fighter_stats_df, fighter_name)
+
+        self.df.to_csv(PathSettings.TRAINING_DATA_CSV, index=False)
+
     def _build_regression_df(self) -> pd.DataFrame:
         """
         Builds a dataframe that will be used to create the regression models.
@@ -137,37 +171,3 @@ class FeatureEngineering(CSVProcessingHandler):
         prediction = model.predict(first_valid_stat)
         fighter_stats_df.at[fighter_stats_df.index[0], col_name] = prediction
         return fighter_stats_df
-
-    def run_feature_engineering(self) -> None:
-        """
-        Executes the feature engineering process by filling missing values and updating the main DataFrame.
-        """
-        models: Dict[str, RegressionModel] = self._fit_models()
-
-        # Define stat columns and their corresponding models
-        stat_model_mapping = {
-            "sig_str_average": "sig_strike",
-            "td_average": "takedowns",
-            "sig_strike_defence_average": "sig_strike_defence",
-            "td_defence_average": "takedowns_defence",
-        }
-
-        for fighter_name in self.fighters:
-            fighter = Fighter(self.df, fighter_name)
-
-            if len(fighter.fighter_df) <= 1:
-                continue
-
-            all_stats = fighter.order_fighter_stats(self.percent_stats)
-            fighter_stats_df = fighter.setup_missing_val_df(all_stats)
-
-            # Fill missing values for each stat using corresponding model
-            for stat_col, model_name in stat_model_mapping.items():
-                fighter_stats_df = self.fill_missing_value(
-                    fighter_stats_df, stat_col, models[model_name]
-                )
-
-            fighter_stats_df = fighter_stats_df.drop(columns=self.percent_stats, axis=1)
-            self._populate_averages_cols(fighter_stats_df, fighter_name)
-
-        self.df.to_csv(PathSettings.TRAINING_DATA_CSV, index=False)
