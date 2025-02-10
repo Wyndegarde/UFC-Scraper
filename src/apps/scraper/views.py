@@ -1,7 +1,3 @@
-from django.shortcuts import render
-
-# Create your views here.
-
 from django.http import HttpResponse
 from src.config.config import PathSettings
 from src.lib.engines import ScrapingEngine

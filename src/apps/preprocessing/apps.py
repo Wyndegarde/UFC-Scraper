@@ -3,4 +3,4 @@ from django.apps import AppConfig
 
 class PreprocessingConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "preprocessing"
+    name = "src.apps.preprocessing"

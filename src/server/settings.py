@@ -14,7 +14,6 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-print(BASE_DIR)
 
 
 # Quick-start development settings - unsuitable for production
@@ -33,12 +32,14 @@ ALLOWED_HOSTS: list[str] = []
 
 INSTALLED_APPS: list[str] = [
     "src.apps.scraper",
+    "src.apps.preprocessing",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework_swagger",
 ]
 
 MIDDLEWARE = [
