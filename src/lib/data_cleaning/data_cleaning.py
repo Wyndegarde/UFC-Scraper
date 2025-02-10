@@ -92,7 +92,7 @@ class DataCleaner(CSVProcessingHandler):
             "red_td_defence_percent",
             "blue_td_defence_percent",
         ]
-        self.df = self.object_df[UFC_key_columns]
+        self.df = self.df[UFC_key_columns]
         self.df.to_csv(PathSettings.CLEAN_DATA_CSV, index=False)
         # return self.df
 
@@ -139,7 +139,7 @@ class DataCleaner(CSVProcessingHandler):
         }
         height_reach_cols = self._get_height_reach_cols()
 
-        self.df = self.object_df[next_event_key_columns]
+        self.df = self.df[next_event_key_columns]
         self.df.rename(columns=column_mapper, inplace=True)
         percent_cols = [col for col in self.df.columns if "average" in col]
         for column in percent_cols:
