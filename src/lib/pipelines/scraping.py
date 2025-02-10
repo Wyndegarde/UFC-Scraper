@@ -7,7 +7,8 @@ import pandas as pd
 from src.lib.data_cleaning import DataCleaner
 from src.lib.engines import ScrapingEngine
 from src.lib.exceptions import ScrapingException
-from src.lib.processing import CSVProcessingHandler, ProcessingHandlerABC
+from src.lib.processing import ProcessingHandlerABC
+from src.lib.processing.cache import CacheABC
 from src.lib.scrapers import (
     HomepageScraper,
     BoutScraper,
@@ -26,26 +27,21 @@ class ScrapingPipeline:
     # Limit the number of concurrent tasks
     sem = asyncio.Semaphore(10)
 
-    def __init__(self, scraping_engine: ScrapingEngine) -> None:
+    def __init__(self, scraping_engine: ScrapingEngine, cache: CacheABC) -> None:
         self.scraping_engine = scraping_engine
+        self.cache = cache
 
-    async def run(self, raw_data_processor: ProcessingHandlerABC) -> Any:
+    async def run(self, raw_data_processor: ProcessingHandlerABC) -> None:
         """
         Executes all the logic from the scrapers and writes the data to the csv files.
-
-        Returns:
-            Any: Still in progress.
         """
 
-        # Instantiate all data processors required for scraping.
-        # raw_data_processor = DataCleaner(
-        #     csv_path=PathSettings.RAW_DATA_CSV, allow_creation=True
-        # )
-        cache = get_cache(PathSettings.EVENT_CACHE_JSON)
+        cached_event_links = self.cache.get()
+
         # Instantiate the homepage scraper and get all the links to each event.
         homepage = HomepageScraper(
             url="http://www.ufcstats.com/statistics/events/completed",
-            cache=cache,
+            cache=cached_event_links,
         )
 
         filtered_event_links: List[str] = await homepage.scrape_url()
@@ -60,7 +56,7 @@ class ScrapingPipeline:
             if isinstance(result, ScrapingException):
                 console.log(result)
 
-        write_cache(PathSettings.EVENT_CACHE_JSON, homepage.cache)
+        self.cache.write(homepage.cache)
         raw_data_processor.write()
 
     async def _scrape_events(
