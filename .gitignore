@@ -10,3 +10,4 @@ playground.ipynb
 *.joblib
 mlruns/
 *sqlite3
+scratch.py

@@ -15,3 +15,12 @@ async def scrape_past_events(request):
     )
     await scraping_pipeline.run(raw_data_processor)
     return HttpResponse("Scraping past events")
+
+
+async def scrape_next_event(request):
+    scraping_pipeline = ScrapingPipeline(
+        ScrapingEngine(),
+        JSONCache(PathSettings.EVENT_CACHE_JSON),
+    )
+    await scraping_pipeline.scrape_next_event()
+    return HttpResponse("Scraping next event")

@@ -150,7 +150,7 @@ class ScrapingPipeline:
 
             full_fight_details = {**all_info, **fighter_profiles}
 
-        next_event_processor.add_row(full_fight_details)
+            next_event_processor.add_row(full_fight_details)
 
         next_event_processor.clean_next_event()
         next_event_processor.write()
