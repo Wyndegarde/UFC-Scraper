@@ -32,7 +32,7 @@ ALLOWED_HOSTS: list[str] = []
 # Application definition
 
 INSTALLED_APPS: list[str] = [
-    "src.apps.scraping",
+    "src.apps.scraper",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
