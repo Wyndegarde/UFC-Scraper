@@ -37,9 +37,16 @@ test = [
 # [project.scripts]
 # scraper = ufc_scraper.main:main
 
-[tool.setuptools]
-packages = ["ufc_scraper"]
+
 
 [tool.ruff]
-extend-ignore = ["E501"]
+lint.extend-ignore = ["E501", "F401"]
+exclude = ["*/__init__.py"]
+line-length = 88
+target-version = "py313"
 
+[tool.mypy]
+ignore_missing_imports = true
+exclude = [".*/__init__.py$"]
+packages = ["src"]
+explicit_package_bases = true
