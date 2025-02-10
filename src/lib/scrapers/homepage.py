@@ -72,6 +72,7 @@ class HomepageScraper(ScraperABC):
                 links.append(link["href"])
 
         filtered_links = self._filter_event_links(links)
+        self.cache.extend(filtered_links)
         return filtered_links
 
     async def _get_next_event(self) -> str:

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Dict
 
 import pandas as pd
 
@@ -60,8 +61,9 @@ class CSVProcessingHandler(ProcessingHandlerABC):
                 ) from exc
         return data_frame
 
-    def add_row(self, row: pd.DataFrame):
-        self.df = pd.concat([self.df, row], ignore_index=True)
+    def add_row(self, row: Dict[str, str]):
+        row_df = pd.DataFrame.from_dict(row, orient="index").T
+        self.df = pd.concat([self.df, row_df], ignore_index=True)
 
     def write(self):
         """

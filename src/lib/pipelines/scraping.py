@@ -147,10 +147,8 @@ class ScrapingPipeline:
             all_info = await bout.extract_future_bout_stats()
 
             full_fight_details = {**all_info, **fighter_profiles}
-            full_fight_details_df = pd.DataFrame.from_dict(
-                full_fight_details, orient="index"
-            ).T
-        next_event_processor.add_row(full_fight_details_df)
+
+        next_event_processor.add_row(full_fight_details)
 
         next_event_processor.clean_next_event()
         next_event_processor.write()
