@@ -47,6 +47,6 @@ target-version = "py313"
 
 [tool.mypy]
 ignore_missing_imports = true
-exclude = [".*/__init__.py$", "migrations"]
+exclude = [".*/__init__.py$"]
 packages = ["src"]
 explicit_package_bases = true
