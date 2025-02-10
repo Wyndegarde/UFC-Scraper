@@ -14,7 +14,7 @@ from src.lib.processing import CSVProcessingHandler
 from src.config import PathSettings
 
 
-class DataCleaner(CSVProcessingHandler):
+class DataCleaningEngine(CSVProcessingHandler):
     """
     Reads in the raw data scraped from the web and cleans it.
 
