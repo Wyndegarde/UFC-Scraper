@@ -4,9 +4,9 @@ import type { FightDetails } from "~/types/fights";
 
 export function FightDetails({ fight }: { fight: FightDetails }) {
   return (
-    <>
-      <h2>{fight.red_fighter}</h2>
-      <h2>{fight.blue_fighter}</h2>
-    </>
+    <tr className="border-b">
+      <td className="py-2">{fight.red_fighter}</td>
+      <td className="py-2">{fight.blue_fighter}</td>
+    </tr>
   );
 }

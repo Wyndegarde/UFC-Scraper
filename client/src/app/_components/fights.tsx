@@ -6,10 +6,18 @@ import { FightDetails } from "~/app/_components/fightDetails";
 
 export function Fights({ fights }: FightsProps) {
   return (
-    <div>
-      {fights.map((fight) => (
-        <FightDetails fight={fight} key={fight.red_fighter} />
-      ))}
-    </div>
+    <table className="w-full">
+      <thead>
+        <tr>
+          <th className="text-left">Red Fighter</th>
+          <th className="text-left">Blue Fighter</th>
+        </tr>
+      </thead>
+      <tbody>
+        {fights.map((fight) => (
+          <FightDetails fight={fight} key={fight.red_fighter} />
+        ))}
+      </tbody>
+    </table>
   );
 }
