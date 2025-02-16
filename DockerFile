@@ -23,7 +23,9 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Copy project
-COPY . .
+COPY ./src .
+COPY ./data .
+COPY ./manage.py .
 
 # Expose port for Django
 EXPOSE 8000
