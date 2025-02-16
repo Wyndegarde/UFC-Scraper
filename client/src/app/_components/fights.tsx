@@ -2,12 +2,13 @@
 
 
 import type { FightsProps } from "~/types/fights";
+import { FightDetails } from "~/app/_components/fightDetails";
 
 export function Fights({ fights }: FightsProps) {
   return (
     <div>
       {fights.map((fight) => (
-        <div key={fight.red_fighter}>{fight.red_fighter}</div>
+        <FightDetails fight={fight} key={fight.red_fighter} />
       ))}
     </div>
   );

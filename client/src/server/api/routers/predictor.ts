@@ -13,8 +13,8 @@ export const predictorRouter = createTRPCRouter({
     if (!response.ok) {
       throw new Error('Failed to fetch fights');
     }
-    const data = await response.json() as FightDetails[];
-    return data;
+    const { data } = await response.json();
+    return data as FightDetails[];
   }),
 });
     

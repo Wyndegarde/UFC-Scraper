@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { FightDetails } from "~/types/fights";
 import { LatestPost } from "~/app/_components/post";
 import { api, HydrateClient } from "~/trpc/server";
+import { Fights } from "~/app/_components/fights";
 
 export default async function Home() {
   const hello = await api.post.hello({ text: "from tRPC" });
@@ -44,10 +45,12 @@ export default async function Home() {
             <p className="text-2xl text-white">
               {hello ? hello.greeting : "Loading tRPC query..."}
             </p>
-            <div>{JSON.stringify(fights)}</div>
+          </div>
+          <div>
+            <Fights fights={fights} />
           </div>
 
-          <LatestPost />
+          {/* <LatestPost /> */}
         </div>
       </main>
     </HydrateClient>
