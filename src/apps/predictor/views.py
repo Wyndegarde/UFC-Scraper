@@ -1,6 +1,7 @@
 import pandas as pd
+from loguru import logger as log
 
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from src.config import PathSettings
 from src.lib.modelling.inference import Inference
 
@@ -8,7 +9,8 @@ from src.lib.modelling.inference import Inference
 def predictor(request):
     inference = Inference(PathSettings.MODEL_WEIGHTS, PathSettings.NEXT_EVENT_CSV)
     predictions = inference.predict()
-    return HttpResponse(predictions)
+    log.info(predictions)
+    return JsonResponse({"data": predictions})
 
 
 def show_next_event(request):

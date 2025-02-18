@@ -9,7 +9,7 @@ export const predictorRouter = createTRPCRouter({
       ? env.BACKEND_URL 
       : env.NEXT_PUBLIC_BACKEND_URL;
       
-    const response = await fetch(`${baseUrl}/predictor/next_event/`);
+    const response = await fetch(`${baseUrl}/predictor/predictor/`);
     if (!response.ok) {
       throw new Error('Failed to fetch fights');
     }

@@ -1,3 +1,26 @@
+/**
+ * Root Layout Component
+ * 
+ * This is a crucial file in the Next.js application (specifically one created with the T3 Stack).
+ * It defines the root layout that wraps around all pages in the application, allowing us to define
+ * common UI elements and configurations that should be present across the entire site.
+ * 
+ * Key Components:
+ * 1. Global Styles: Imports CSS styles applied across the entire application
+ * 2. Font Configuration: Uses Geist Sans font available throughout the application
+ * 3. Metadata Configuration: Defines default metadata for SEO and browser display
+ * 4. TRPC Integration: Enables type-safe API calls between frontend and backend
+ * 
+ * How it Works:
+ * - Layout Structure: Wraps every page in the application
+ * - Provider Pattern: Implements TRPC provider for app-wide API functionality
+ * - HTML Structure: Sets up basic HTML with language and font settings
+ * - Integration Points: Renders child pages, provides metadata, styles, and TRPC functionality
+ * 
+ * This file is fundamental to the application's structure and is one of the first files to load.
+ * It's part of Next.js 13+ app router architecture and follows T3 Stack conventions.
+ */
+
 import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";

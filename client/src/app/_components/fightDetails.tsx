@@ -7,6 +7,7 @@ export function FightDetails({ fight }: { fight: FightDetails }) {
     <tr className="border-b">
       <td className="py-2">{fight.red_fighter}</td>
       <td className="py-2">{fight.blue_fighter}</td>
+      <td className="py-2">{fight.predicted_winner}</td>
     </tr>
   );
 }

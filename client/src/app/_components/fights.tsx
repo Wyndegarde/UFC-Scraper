@@ -11,6 +11,7 @@ export function Fights({ fights }: FightsProps) {
         <tr>
           <th className="text-left">Red Fighter</th>
           <th className="text-left">Blue Fighter</th>
+          <th className="text-left">Predicted Winner</th>
         </tr>
       </thead>
       <tbody>
