@@ -11,6 +11,8 @@ INFERENCE_COLUMNS = [
     "blue_td_average",
     "red_sig_str_average",
     "blue_sig_str_average",
+    "red_age",
+    "blue_age",
 ]
 
 # Inference columns plus the winner column

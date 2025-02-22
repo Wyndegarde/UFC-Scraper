@@ -12,6 +12,7 @@ import numpy as np
 
 from src.lib.processing import CSVProcessingHandler
 from src.config import PathSettings
+from src.lib.engines.constants import UFC_KEY_COLUMNS, NEXT_EVENT_KEY_COLUMNS
 
 
 class DataCleaningEngine(CSVProcessingHandler):
@@ -68,62 +69,11 @@ class DataCleaningEngine(CSVProcessingHandler):
             self.df.columns.str.replace(".", "").str.replace(" ", "_").str.lower()
         )
         # Using only the columns necessary for the model.
-        UFC_key_columns = [
-            "date",
-            "red_fighter",
-            "blue_fighter",
-            "winner",
-            "red_sig_str_percent",
-            "blue_sig_str_percent",
-            "red_sub_att",
-            "blue_sub_att",
-            "red_stance",
-            "blue_stance",
-            "red_total_str_percent",
-            "blue_total_str_percent",
-            "red_td_percent",
-            "blue_td_percent",
-            "height_diff",
-            "reach_diff",
-            "red_age",
-            "blue_age",
-            "red_sig_strike_defence_percent",
-            "blue_sig_strike_defence_percent",
-            "red_td_defence_percent",
-            "blue_td_defence_percent",
-        ]
-        self.df = self.df[UFC_key_columns]
+        self.df = self.df[UFC_KEY_COLUMNS]
         self.df.to_csv(PathSettings.CLEAN_DATA_CSV, index=False)
         # return self.df
 
     def clean_next_event(self):
-        # Lazy way of doing this rn. cba finding more elegant solution.
-        next_event_key_columns = [
-            "date",
-            "location",
-            "red_fighter",
-            "blue_fighter",
-            "weight_class",
-            "title_bout",
-            "red_Striking Accuracy",
-            "blue_Striking Accuracy",
-            "red_Defense",
-            "blue_Defense",
-            "red_Takedown Accuracy",
-            "blue_Takedown Accuracy",
-            "red_Takedown Defense",
-            "blue_Takedown Defense",
-            "red_Stance",
-            "blue_Stance",
-            "red_DOB",
-            "blue_DOB",
-            "red_Height",
-            "blue_Height",
-            "red_Reach",
-            "blue_Reach",
-            "red_record",
-            "blue_record",
-        ]
 
         column_mapper = {
             "red_Striking Accuracy": "red_sig_str_average",
@@ -139,7 +89,7 @@ class DataCleaningEngine(CSVProcessingHandler):
         }
         height_reach_cols = self._get_height_reach_cols()
 
-        self.df = self.df[next_event_key_columns]
+        self.df = self.df[NEXT_EVENT_KEY_COLUMNS]
         self.df.rename(columns=column_mapper, inplace=True)
         percent_cols = [col for col in self.df.columns if "average" in col]
         for column in percent_cols:
