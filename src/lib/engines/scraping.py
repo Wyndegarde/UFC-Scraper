@@ -2,7 +2,7 @@ from typing import List, Dict
 from rich.console import Console
 
 from src.lib.exceptions import ScrapingException
-from src.lib.processing.handlers import ProcessingHandlerABC
+from src.lib.data_managers.handlers import ProcessingHandlerABC
 from src.lib.scrapers import CardScraper, BoutScraper, FighterScraper
 
 console = Console()

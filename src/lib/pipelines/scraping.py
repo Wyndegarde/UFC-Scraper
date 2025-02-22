@@ -6,8 +6,8 @@ import pandas as pd
 
 from src.lib.engines import ScrapingEngine, DataCleaningEngine
 from src.lib.exceptions import ScrapingException
-from src.lib.processing import ProcessingHandlerABC
-from src.lib.processing.cache import CacheABC
+from src.lib.data_managers import ProcessingHandlerABC
+from src.lib.data_managers.cache import CacheABC
 from src.lib.scrapers import (
     HomepageScraper,
     BoutScraper,

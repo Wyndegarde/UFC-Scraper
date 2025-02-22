@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 
 
-from src.lib.processing import CSVProcessingHandler
+from src.lib.data_managers import CSVProcessingHandler
 from src.config import PathSettings
 from src.lib.constants.columns import TRAINING_COLUMNS
 

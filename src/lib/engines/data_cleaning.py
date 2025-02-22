@@ -5,7 +5,7 @@ Module responsible for cleaning the raw data scraped from the web.
 from typing import List, Type
 from pathlib import Path
 
-from src.lib.processing import CSVProcessingHandler
+from src.lib.data_managers import CSVProcessingHandler
 from src.config import PathSettings
 from src.lib.constants.columns import UFC_KEY_COLUMNS
 

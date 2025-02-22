@@ -2,7 +2,7 @@ from typing import List, DefaultDict, Dict
 import numpy as np
 import pandas as pd
 
-from src.lib.processing import CSVProcessingHandler
+from src.lib.data_managers import CSVProcessingHandler
 from src.config import PathSettings
 from .regression import RegressionModel
 from .fighter import Fighter

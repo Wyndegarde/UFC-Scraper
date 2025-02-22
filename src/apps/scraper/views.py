@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from src.config.config import PathSettings
 from src.lib.engines import ScrapingEngine
 from src.lib.pipelines import ScrapingPipeline
-from src.lib.processing import JSONCache, CSVProcessingHandler
+from src.lib.data_managers import JSONCache, CSVProcessingHandler
 
 
 async def scrape_past_events(request):
