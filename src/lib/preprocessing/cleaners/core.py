@@ -39,8 +39,10 @@ class CoreCleaner(CleanerABC):
         """
         pattern: re.Pattern = re.compile(WEIGHT_CLASS_PATTERN)
         self.df["weight_class"] = self.df["weight_class"].apply(
-            lambda x: pattern.sub("", x)
+            lambda x: pattern.sub("", x).strip()
         )
+        # remove any rows where weight class is empty string
+        self.df = self.df[self.df["weight_class"] != ""]
 
     def _clean_col_names(self) -> None:
         """

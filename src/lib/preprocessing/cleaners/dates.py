@@ -28,7 +28,7 @@ class DateCleaner(CleanerABC):
         for column in self.df.columns:
             if "dob" in column:
                 self.df[column] = self.df[column].apply(
-                    lambda x: datetime.strptime(x, "%B %d, %Y")
+                    lambda x: datetime.strptime(x, "%b %d, %Y")
                 )
 
     def _create_age_columns(self):
