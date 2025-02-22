@@ -21,9 +21,14 @@ class HeightReachCleaner(CleanerABC):
         """
         height_reach_cols: List[str] = self._get_height_reach_cols()
 
-        self._convert_to_cm(height_reach_cols)
+        self.convert_to_cm(height_reach_cols)
         self._fill_missing_measurements(height_reach_cols)
-        self._create_measurement_differences(height_reach_cols)
+        self.create_measurement_differences(height_reach_cols)
+        return self.df
+
+    def clean_next_event(self):
+        self.convert_to_cm()
+        self.create_measurement_differences()
         return self.df
 
     def _get_height_reach_cols(self) -> List[str]:
@@ -55,7 +60,7 @@ class HeightReachCleaner(CleanerABC):
 
         clean_df: pd.DataFrame = self.df.copy()
         clean_df.dropna(subset=height_reach_cols, inplace=True)
-        self._convert_to_cm(height_reach_cols)
+        self.convert_to_cm(height_reach_cols)
 
         return clean_df.groupby("weight_class")[height_reach_cols].mean()
 
@@ -77,7 +82,7 @@ class HeightReachCleaner(CleanerABC):
                     weight_class: str = self.df.loc[idx, "weight_class"]
                     self.df.loc[idx, col] = avg_measurements.loc[weight_class, col]
 
-    def _create_measurement_differences(self, height_reach_cols: List[str]) -> None:
+    def create_measurement_differences(self, height_reach_cols: List[str]) -> None:
         """
         Creates columns for height and reach differences between fighters.
 
@@ -133,7 +138,7 @@ class HeightReachCleaner(CleanerABC):
         except (ValueError, AttributeError):
             return np.nan
 
-    def _convert_to_cm(self, height_reach_cols: List[str]) -> None:
+    def convert_to_cm(self, height_reach_cols: List[str]) -> None:
         """
         Converts all height and reach measurements to centimeters.
 

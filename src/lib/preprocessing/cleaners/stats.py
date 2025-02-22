@@ -10,6 +10,10 @@ class StatsCleaner(CleanerABC):
         self._handle_percent_columns()
         return self.df
 
+    def clean_next_event(self):
+        self.clean_next_event_percent_cols()
+        return self.df
+
     """-----------------------------------Attempted and landed columns-----------------------------------"""
 
     def _handle_attempt_landed_columns(self) -> None:
@@ -53,6 +57,11 @@ class StatsCleaner(CleanerABC):
         return (numerator / denominator).fillna(0)
 
     """-----------------------------------Percentage columns-----------------------------------"""
+
+    def clean_next_event_percent_cols(self):
+        percent_cols = [col for col in self.df.columns if "average" in col]
+        for column in percent_cols:
+            self.df[column] = self.df[column].str.strip("%").astype("int") / 100
 
     def _handle_percent_columns(self) -> None:
         """Handle percentage columns and calculate defense percentages."""
