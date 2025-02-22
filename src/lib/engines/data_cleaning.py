@@ -35,10 +35,10 @@ class DataCleaningEngine(CSVProcessingHandler):
         self.df.replace("---", "0", inplace=True)
 
         # Special bouts have things like TUF in the weight class. This removes that.
-        self._clean_weight_class()
+        # self._clean_weight_class()
 
         # Simply converts the date columns to datetime objects.
-        self._format_date_columns()
+        # self._format_date_columns()
 
         # Data source has stats as "x of y". Split these into two cols.
         self._handle_attempt_landed_columns()
@@ -49,7 +49,7 @@ class DataCleaningEngine(CSVProcessingHandler):
         # self._handle_height_reach(height_reach_no_na_df)
 
         # Creates columns for the age of each fighter.
-        self._create_age_columns()
+        # self._create_age_columns()
 
         # Converts cols with % in them to floats.
         self._handle_percent_columns()
@@ -101,12 +101,6 @@ class DataCleaningEngine(CSVProcessingHandler):
         # self._apply_hr_conversions(self.df, height_reach_cols=height_reach_cols)
         # self._create_height_reach_diff_columns(height_reach_cols=height_reach_cols)
 
-    def _get_dob_cols(self) -> List[str]:
-        """
-        Overkill but gets the red/blue DOB columns.
-        """
-        return [column for column in self.df.columns if "DOB" in column]
-
     def _get_attempt_landed_columns(self) -> List[str]:
         """
         Finds all columns where the values look like "x of y"
@@ -152,37 +146,6 @@ class DataCleaningEngine(CSVProcessingHandler):
             self.df[percent_suffix] = self.df[percent_suffix].fillna(0)
 
             self.df.drop(columns=column, inplace=True)
-
-    def _create_age_columns(self):
-        self.df["red_age"] = (
-            self.df["date"]
-            .sub(self.df["red_DOB"])
-            .dt.days.div(365.25)
-            .round(0)
-            .astype(int)
-        )
-        self.df["blue_age"] = (
-            self.df["date"]
-            .sub(self.df["blue_DOB"])
-            .dt.days.div(365.25)
-            .round(0)
-            .astype(int)
-        )
-
-    def _format_date_columns(self):
-        """
-        Formats the date columns to datetime objects.
-        """
-        self.df["date"] = self.df["date"].apply(
-            lambda x: datetime.strptime(x, "%B %d, %Y")
-        )
-        self.df.drop(self.df[self.df["blue_DOB"] == "--"].index, inplace=True)
-        self.df.drop(self.df[self.df["red_DOB"] == "--"].index, inplace=True)
-        for column in self.df.columns:
-            if "DOB" in column:
-                self.df[column] = self.df[column].apply(
-                    lambda x: datetime.strptime(x, "%b %d, %Y")
-                )
 
     def _handle_percent_columns(self):
         percent_cols = [col for col in self.df.columns if "%" in col]
