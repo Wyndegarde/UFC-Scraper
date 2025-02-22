@@ -2,6 +2,7 @@
 Module responsible for cleaning the raw data scraped from the web.
 """
 
+from typing import List, Type
 from pathlib import Path
 
 from src.lib.processing import CSVProcessingHandler
@@ -13,6 +14,7 @@ from src.lib.preprocessing.cleaners import (
     HeightReachCleaner,
     StatsCleaner,
 )
+from src.lib.preprocessing.cleaners.abstract import CleanerABC
 
 
 class DataCleaningEngine(CSVProcessingHandler):
@@ -30,21 +32,18 @@ class DataCleaningEngine(CSVProcessingHandler):
         if (not allow_creation) and (self.df.empty):
             raise ValueError("DataFrame must not be empty")
 
-    def clean_raw_data(self):
-        self.df = CoreCleaner(self.df).clean()
-        self.df = DateCleaner(self.df).clean()
-        self.df = HeightReachCleaner(self.df).clean()
-        self.df = StatsCleaner(self.df).clean()
+    def clean_raw_data(self, cleaners: List[Type[CleanerABC]]):
+        for cleaner in cleaners:
+            self.df = cleaner(self.df).clean()
 
         # Using only the columns necessary for the model training.
         self.df = self.df[UFC_KEY_COLUMNS]
         self.df.to_csv(PathSettings.CLEAN_DATA_CSV, index=False)
 
-    def clean_next_event(self):
+    def clean_next_event(self, cleaners: List[Type[CleanerABC]]):
+        for cleaner in cleaners:
+            self.df = cleaner(self.df).clean_next_event()
 
-        self.df = StatsCleaner(self.df).clean_next_event()
-        self.df = CoreCleaner(self.df).clean_next_event()
-        self.df = HeightReachCleaner(self.df).clean_next_event()
         self.df.to_csv(PathSettings.NEXT_EVENT_CSV, index=False)
 
     def get_fights_per_fighter(self):

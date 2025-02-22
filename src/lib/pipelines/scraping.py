@@ -13,6 +13,12 @@ from src.lib.scrapers import (
     BoutScraper,
     CardScraper,
 )
+from src.lib.preprocessing.cleaners import (
+    CoreCleaner,
+    DateCleaner,
+    HeightReachCleaner,
+    StatsCleaner,
+)
 from src.config import PathSettings, console
 
 from .constants import UFC_HOMEPAGE_URL
@@ -152,5 +158,6 @@ class ScrapingPipeline:
 
             next_event_processor.add_row(full_fight_details)
 
-        next_event_processor.clean_next_event()
+        cleaners = [CoreCleaner, DateCleaner, HeightReachCleaner, StatsCleaner]
+        next_event_processor.clean_next_event(cleaners)
         next_event_processor.write()

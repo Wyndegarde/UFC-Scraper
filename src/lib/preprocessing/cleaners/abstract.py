@@ -10,3 +10,7 @@ class CleanerABC(ABC):
     @abstractmethod
     def clean(self):
         pass
+
+    @abstractmethod
+    def clean_next_event(self):
+        pass

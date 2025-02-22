@@ -13,6 +13,9 @@ class DateCleaner(CleanerABC):
         self._create_age_columns()
         return self.df
 
+    def clean_next_event(self):
+        pass
+
     def _format(self):
         """
         Format date columns to datetime objects.
