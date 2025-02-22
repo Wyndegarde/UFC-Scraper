@@ -3,7 +3,8 @@ import numpy as np
 import re
 
 from .abstract import CleanerABC
-from ..constants import WEIGHT_CLASS_PATTERN, NEXT_EVENT_KEY_COLUMNS
+from ..constants import WEIGHT_CLASS_PATTERN
+from src.lib.constants.columns import NEXT_EVENT_KEY_COLUMNS, NEXT_EVENT_COLUMN_MAPPING
 
 
 class CoreCleaner(CleanerABC):
@@ -53,18 +54,6 @@ class CoreCleaner(CleanerABC):
         self.df.columns = self.df.columns.str.replace(".", "").str.replace(" ", "_")
 
     def clean_next_event_col_names(self) -> None:
-        column_mapper: Dict[str, str] = {
-            "red_Striking Accuracy": "red_sig_str_average",
-            "blue_Striking Accuracy": "blue_sig_str_average",
-            "red_Defense": "red_sig_strike_defence_average",
-            "blue_Defense": "blue_sig_strike_defence_average",
-            "red_Takedown Accuracy": "red_td_average",
-            "blue_Takedown Accuracy": "blue_td_average",
-            "red_Takedown Defense": "red_td_defence_average",
-            "blue_Takedown Defense": "blue_td_defence_average",
-            "red_Stance": "red_stance",
-            "blue_Stance": "blue_stance",
-        }
 
         self.df = self.df[NEXT_EVENT_KEY_COLUMNS]
-        self.df.rename(columns=column_mapper, inplace=True)
+        self.df.rename(columns=NEXT_EVENT_COLUMN_MAPPING, inplace=True)

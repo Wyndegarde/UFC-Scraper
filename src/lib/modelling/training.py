@@ -17,7 +17,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 from src.lib.processing import CSVProcessingHandler
 from src.config import PathSettings
-from .constants import TRAINING_COLUMNS
+from src.lib.constants.columns import TRAINING_COLUMNS
 
 
 class Training(CSVProcessingHandler):
