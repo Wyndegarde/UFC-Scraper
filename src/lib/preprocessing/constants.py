@@ -51,3 +51,8 @@ NEXT_EVENT_KEY_COLUMNS = [
     "red_record",
     "blue_record",
 ]
+
+WEIGHT_CLASS_PATTERN = r"\d+|Tournament|Interim |UFC \
+                |Australia |UK |vs. |Brazil |China \
+                    |TUF Nations Canada |America |Latin \
+                        |Ultimate Fighter  |Ultimate Fighter "

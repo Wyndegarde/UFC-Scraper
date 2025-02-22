@@ -45,8 +45,8 @@ class DataCleaningEngine(CSVProcessingHandler):
 
         # small subset of rows have missing values for height and reach.
         # Drops these for accuracy.
-        height_reach_no_na_df = self._create_height_reach_na_filler_df()
-        self._handle_height_reach(height_reach_no_na_df)
+        # height_reach_no_na_df = self._create_height_reach_na_filler_df()
+        # self._handle_height_reach(height_reach_no_na_df)
 
         # Creates columns for the age of each fighter.
         self._create_age_columns()
@@ -55,8 +55,8 @@ class DataCleaningEngine(CSVProcessingHandler):
         self._handle_percent_columns()
 
         # Where missing, the stance is changed to the most common stance.
-        self.df["blue_STANCE"].replace(np.nan, "Orthodox", inplace=True)
-        self.df["red_STANCE"].replace(np.nan, "Orthodox", inplace=True)
+        # self.df["blue_STANCE"].replace(np.nan, "Orthodox", inplace=True)
+        # self.df["red_STANCE"].replace(np.nan, "Orthodox", inplace=True)
 
         # number_of_fights_per_fighter = (
         #     self.df["red_fighter"]
@@ -65,9 +65,9 @@ class DataCleaningEngine(CSVProcessingHandler):
         # )
 
         # Clean the column names
-        self.df.columns = (
-            self.df.columns.str.replace(".", "").str.replace(" ", "_").str.lower()
-        )
+        # self.df.columns = (
+        #     self.df.columns.str.replace(".", "").str.replace(" ", "_").str.lower()
+        # )
         # Using only the columns necessary for the model.
         self.df = self.df[UFC_KEY_COLUMNS]
         self.df.to_csv(PathSettings.CLEAN_DATA_CSV, index=False)
@@ -87,7 +87,6 @@ class DataCleaningEngine(CSVProcessingHandler):
             "red_Stance": "red_stance",
             "blue_Stance": "blue_stance",
         }
-        height_reach_cols = self._get_height_reach_cols()
 
         self.df = self.df[NEXT_EVENT_KEY_COLUMNS]
         self.df.rename(columns=column_mapper, inplace=True)
@@ -99,56 +98,8 @@ class DataCleaningEngine(CSVProcessingHandler):
         self.df["red_stance"].replace(np.nan, "Orthodox", inplace=True)
         self._clean_weight_class()
         self._format_date_columns()
-        self._apply_hr_conversions(self.df, height_reach_cols=height_reach_cols)
-        self._create_height_reach_diff_columns(height_reach_cols=height_reach_cols)
-
-    def _get_height_reach_cols(self) -> List[str]:
-        """
-        Extracts the height and reach columns from the dataframe.
-        Makes it easier to work with due to red/blue prefixes.
-        """
-        return [
-            column
-            for column in self.df.columns
-            if "reach" in column.lower() or "height" in column.lower()
-        ]
-
-    def _create_height_reach_na_filler_df(self) -> pd.DataFrame:
-        """
-        Creates a new dataframe for filling in missing values for height and reach cols.
-        Uses the overall means, separated out by weight class.
-
-        Returns:
-            pd.DataFrame: A dataframe with the mean height and reach for each weight class.
-        """
-        height_reach_cols: List[str] = self._get_height_reach_cols()
-
-        # Take a copy of the original df and drop all rows with missing values for height and reach.
-        reach_height_df: pd.DataFrame = self.df.copy()
-        reach_height_df.dropna(subset=height_reach_cols, inplace=True)
-        self._apply_hr_conversions(reach_height_df, height_reach_cols)
-
-        # group by weight class and take the mean of the height and reach columns.
-        grouping_by_weight_classes: pd.DataFrame = reach_height_df.groupby(
-            "weight_class"
-        )[height_reach_cols].mean()
-
-        return grouping_by_weight_classes[height_reach_cols]
-
-    def _clean_weight_class(self) -> None:
-        """
-        Some events have stray words in the weight class column.
-        This removes them.
-        """
-        pattern: re.Pattern = re.compile(
-            r"\d+|Tournament|Interim |UFC \
-                |Australia |UK |vs. |Brazil |China \
-                    |TUF Nations Canada |America |Latin \
-                        |Ultimate Fighter  |Ultimate Fighter "
-        )
-        self.df["weight_class"] = self.df["weight_class"].apply(
-            lambda x: pattern.sub("", x)
-        )
+        # self._apply_hr_conversions(self.df, height_reach_cols=height_reach_cols)
+        # self._create_height_reach_diff_columns(height_reach_cols=height_reach_cols)
 
     def _get_dob_cols(self) -> List[str]:
         """
@@ -202,59 +153,6 @@ class DataCleaningEngine(CSVProcessingHandler):
 
             self.df.drop(columns=column, inplace=True)
 
-    def _convert_reach(self, reach):
-        # Convert both reach columns into cm
-        if reach == "--":
-            return np.nan
-        clean_reach = float(reach.replace('"', ""))
-        return clean_reach * 2.54
-
-    def _convert_height(self, height: str) -> float:
-        """
-        Converts a height in feet'inches to centimeters.
-        """
-        if height == "--":
-            return np.nan
-        feet_str, inches_str = height.split("'")
-        feet = int(feet_str)
-        inches = int(inches_str.replace('"', ""))
-        return round((feet * 12 + inches) * 2.54, 0)
-
-    def _apply_hr_conversions(
-        self, dataframe: pd.DataFrame, height_reach_cols: List[str]
-    ):
-        for column in height_reach_cols:
-            if "height" in column.lower():
-                dataframe[column] = dataframe[column].apply(self._convert_height)
-            else:
-                dataframe[column] = dataframe[column].apply(self._convert_reach)
-
-    def _create_height_reach_diff_columns(self, height_reach_cols):
-        height_columns = [height_reach_cols[0], height_reach_cols[2]]
-        reach_columns = [height_reach_cols[1], height_reach_cols[3]]
-
-        self.df["height_diff"] = (
-            self.df[height_columns[0]] - self.df[height_columns[1]]
-        )  # Red height minus Blue height. So positve value suggests red taller, negative implies red shorter.
-        self.df["reach_diff"] = (
-            self.df[reach_columns[0]] - self.df[reach_columns[1]]
-        )  # Same as for height.
-
-    def _handle_height_reach(self, height_reach_no_na_df: pd.DataFrame) -> None:
-        height_reach_cols: List[str] = self._get_height_reach_cols()
-        self._apply_hr_conversions(self.df, height_reach_cols)
-
-        missing_indices = self.df.index[self.df[height_reach_cols].isna().any(axis=1)]
-
-        for column in height_reach_cols:
-            for i in missing_indices:
-                if np.isnan(self.df.loc[i, column]):
-                    self.df.loc[i, column] = height_reach_no_na_df.loc[
-                        self.df.loc[i, "weight_class"], column
-                    ]
-
-        self._create_height_reach_diff_columns(height_reach_cols)
-
     def _create_age_columns(self):
         self.df["red_age"] = (
             self.df["date"]
@@ -296,20 +194,3 @@ class DataCleaningEngine(CSVProcessingHandler):
 
         self.df["red_td_defence_percent"] = 1 - self.df["blue_Td %"]
         self.df["blue_td_defence_percent"] = 1 - self.df["red_Td %"]
-
-    def _fill_na_values(self, height_reach):
-        grouped_df = self.df.copy()
-        grouped_df = grouped_df.dropna(subset=height_reach)
-
-        grouping_by_weight_classes = grouped_df.groupby("weight_class").mean()
-        reach_height_df = grouping_by_weight_classes[height_reach]
-        missing_value_df = self.df.copy()
-        missing_value_df = missing_value_df[missing_value_df.isna().any(axis=1)]
-        missing_value_df = missing_value_df[height_reach]
-
-        for column in height_reach:
-            for i in missing_value_df.index:
-                if np.isnan(missing_value_df.loc[i, column]):
-                    self.df.loc[i, column] = reach_height_df.loc[
-                        self.df.loc[i, "weight_class"], column
-                    ]

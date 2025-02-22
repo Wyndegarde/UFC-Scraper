@@ -9,7 +9,7 @@ class HeightReachCleaner(CleanerABC):
     INCHES_TO_CM: float = 2.54
     FEET_TO_INCHES: int = 12
 
-    def clean(self) -> None:
+    def clean(self) -> pd.DataFrame:
         """
         Cleans height and reach data by converting measurements to centimeters,
         handling missing values, and creating difference columns.
@@ -24,6 +24,7 @@ class HeightReachCleaner(CleanerABC):
         self._convert_to_cm(height_reach_cols)
         self._fill_missing_measurements(height_reach_cols)
         self._create_measurement_differences(height_reach_cols)
+        return self.df
 
     def _get_height_reach_cols(self) -> List[str]:
         """
