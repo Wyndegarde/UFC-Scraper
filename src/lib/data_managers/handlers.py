@@ -6,7 +6,6 @@ import pandas as pd
 
 
 class ProcessingHandlerABC(ABC):
-    pd
 
     @abstractmethod
     def instantiate(self, *args, **kwargs):

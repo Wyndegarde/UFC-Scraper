@@ -8,9 +8,9 @@ class CleanerABC(ABC):
         self.df = df
 
     @abstractmethod
-    def clean(self):
+    def clean(self) -> pd.DataFrame:
         pass
 
     @abstractmethod
-    def clean_next_event(self):
+    def clean_next_event(self) -> pd.DataFrame:
         pass

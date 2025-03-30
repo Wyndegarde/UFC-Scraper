@@ -8,8 +8,10 @@ Same with Inference.py
 from datetime import datetime
 from joblib import dump
 from pathlib import Path
+from loguru import logger
 
 import mlflow
+from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
@@ -38,7 +40,6 @@ class Training(CSVProcessingHandler):
         self.df = self.df[(self.df.winner != "NC") & (self.df.winner != "D")]
 
         self.df = self.df.dropna()
-        print(self.df.columns)
         self.df = self.df[TRAINING_COLUMNS]
 
         # one hot encode winner column
@@ -53,6 +54,18 @@ class Training(CSVProcessingHandler):
         self.df["red_stance"] = stance_encoder.fit_transform(self.df[["red_stance"]])
         self.df["blue_stance"] = stance_encoder.fit_transform(self.df[["blue_stance"]])
 
+        # one hot encode title bout column
+        title_bout_encoder = OrdinalEncoder()
+        self.df["title_bout"] = title_bout_encoder.fit_transform(
+            self.df[["title_bout"]]
+        )
+
+        # one hot encode weight class column
+        weight_class_encoder = OrdinalEncoder()
+        self.df["weight_class"] = weight_class_encoder.fit_transform(
+            self.df[["weight_class"]]
+        )
+
     def train_model(self):
         self._prepare_data()
         with mlflow.start_run(
@@ -60,7 +73,6 @@ class Training(CSVProcessingHandler):
             experiment_id=self.experiment.experiment_id,
         ):
             mlflow.sklearn.autolog()
-            # print(self.df.columns)
             X = self.df.drop(columns=["outcome"], axis=1)
             y = self.df["outcome"]
 
@@ -73,6 +85,13 @@ class Training(CSVProcessingHandler):
             )
 
             random_forest.fit(X_train, y_train)
+
+            # test model on test set
+            y_pred = random_forest.predict(X_test)
+
+            # calculate accuracy
+            accuracy = accuracy_score(y_test, y_pred)
+            logger.info(f"Accuracy: {accuracy}")
 
             dump(random_forest, PathSettings.MODEL_WEIGHTS)
 

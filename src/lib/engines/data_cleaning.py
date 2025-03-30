@@ -7,7 +7,6 @@ from pathlib import Path
 
 from src.lib.data_managers import CSVProcessingHandler
 from src.config import PathSettings
-from src.lib.constants.columns import UFC_KEY_COLUMNS
 
 from src.lib.preprocessing.cleaners.abstract import CleanerABC
 
@@ -31,8 +30,6 @@ class DataCleaningEngine(CSVProcessingHandler):
         for cleaner in cleaners:
             self.df = cleaner(self.df).clean()
 
-        # Using only the columns necessary for the model training.
-        self.df = self.df[UFC_KEY_COLUMNS]
         self.df.to_csv(PathSettings.CLEAN_DATA_CSV, index=False)
 
     def clean_next_event(self, cleaners: List[Type[CleanerABC]]):
