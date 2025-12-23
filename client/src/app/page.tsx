@@ -17,6 +17,9 @@ export default async function Home() {
           <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
             UFC <span className="text-[#dc2626]">Fight</span> Predictor
           </h1>
+          <h2 className="text-2xl font-bold">
+            Predicted winner of the next UFC event
+          </h2>
           <div>
             <Fights fights={fights} />
           </div>

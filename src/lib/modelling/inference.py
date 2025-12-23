@@ -4,8 +4,8 @@ from typing import Any, List, Dict
 
 from sklearn.preprocessing import OrdinalEncoder
 
-from src.lib.processing import CSVProcessingHandler
-from .constants import INFERENCE_COLUMNS
+from src.lib.data_managers import CSVProcessingHandler
+from src.lib.constants.columns import INFERENCE_COLUMNS
 
 
 class Inference(CSVProcessingHandler):

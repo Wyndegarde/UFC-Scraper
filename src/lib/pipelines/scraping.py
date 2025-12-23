@@ -6,12 +6,18 @@ import pandas as pd
 
 from src.lib.engines import ScrapingEngine, DataCleaningEngine
 from src.lib.exceptions import ScrapingException
-from src.lib.processing import ProcessingHandlerABC
-from src.lib.processing.cache import CacheABC
+from src.lib.data_managers import ProcessingHandlerABC
+from src.lib.data_managers.cache import CacheABC
 from src.lib.scrapers import (
     HomepageScraper,
     BoutScraper,
     CardScraper,
+)
+from src.lib.preprocessing.cleaners import (
+    CoreCleaner,
+    DateCleaner,
+    HeightReachCleaner,
+    StatsCleaner,
 )
 from src.config import PathSettings, console
 
@@ -152,5 +158,6 @@ class ScrapingPipeline:
 
             next_event_processor.add_row(full_fight_details)
 
-        next_event_processor.clean_next_event()
+        cleaners = [CoreCleaner, DateCleaner, HeightReachCleaner, StatsCleaner]
+        next_event_processor.clean_next_event(cleaners)
         next_event_processor.write()

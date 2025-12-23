@@ -2,8 +2,8 @@ from typing import List, Dict
 from rich.console import Console
 
 from src.lib.exceptions import ScrapingException
-from src.lib.processing.handlers import ProcessingHandlerABC
-from src.lib.scrapers import CardScraper, BoutScraper, FighterScraper
+from src.lib.data_managers.handlers import ProcessingHandlerABC
+from src.lib.scrapers import CardScraper, BoutScraper, FighterScraper, HomepageScraper
 
 console = Console()
 
@@ -12,17 +12,22 @@ class ScrapingEngine:
     def __init__(self):
         pass
 
-    def run(self, link_to_event, homepage):
+    def run(
+        self,
+        link_to_event: str,
+        homepage: HomepageScraper,
+        raw_data_processor: ProcessingHandlerABC,
+    ):
         try:
-            return self.scrape_card(link_to_event, homepage)
+            return self.scrape_card(link_to_event, homepage, raw_data_processor)
         except ScrapingException as e:
             console.log(e)
             raise e
 
     async def scrape_card(
         self,
-        link_to_event,
-        homepage,
+        link_to_event: str,
+        homepage: HomepageScraper,
         raw_data_processor: ProcessingHandlerABC,
     ):
         # Instantiate the card scraper and get the event details.
